@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 
@@ -7,15 +8,11 @@ class UndoCommand(Protocol):
 
 
 class FileSystemRepository(Protocol):
-    def resolve(self, user_input_path: str) -> str:
-        """Преобразует пользовательский путь (относительный, ~, ., ..) в абсолютный путь"""
-        raise NotImplementedError
-
-    def get_current(self) -> str:
+    def get_current(self) -> Path:
         """Возвращает текущий абсолютный путь"""
         raise NotImplementedError
 
-    def set_current(self, abs_path: str) -> None:
+    def set_current(self, path: Path) -> None:
         """Устанавливает текущий каталог (абсолютный путь)"""
         raise NotImplementedError
 
