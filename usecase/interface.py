@@ -1,18 +1,26 @@
 from typing import Protocol, runtime_checkable
 
-from entity.command import Command
-
 
 @runtime_checkable
 class UndoCommand(Protocol):
     def undo(self): ...
 
 
-class HistoryRepository(Protocol):
-    def to_cmd(self) -> Command:
-        """Добавляет команду в shell"""
+class FileSystemRepository(Protocol):
+    def resolve(self, user_input_path: str) -> str:
+        """Преобразует пользовательский путь (относительный, ~, ., ..) в абсолютный путь"""
         raise NotImplementedError
 
+    def get_current(self) -> str:
+        """Возвращает текущий абсолютный путь"""
+        raise NotImplementedError
+
+    def set_current(self, abs_path: str) -> None:
+        """Устанавливает текущий каталог (абсолютный путь)"""
+        raise NotImplementedError
+
+
+class HistoryRepository(Protocol):
     def add(self, command: UndoCommand) -> None:
         """Добавляет команду в историю"""
         raise NotImplementedError
@@ -32,3 +40,13 @@ class HistoryRepository(Protocol):
     def clear(self) -> None:
         """Очищает историю команд"""
         raise NotImplementedError
+
+
+class CommandContext:
+    def __init__(
+        self,
+        path_repo: FileSystemRepository,
+        history_repo: HistoryRepository,
+    ) -> None:
+        self.path_repo = path_repo
+        self.history_repo = history_repo

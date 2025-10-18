@@ -1,17 +1,17 @@
-from logging import getLogger
-
 from entity.command import Command
-from entity.errors import CommandNotFoundError, DomainError
-from usecase.interface import HistoryRepository, UndoCommand
-
-logger = getLogger(__name__)
+from entity.errors import CommandNotFoundError
+from usecase.interface import FileSystemRepository, HistoryRepository, UndoCommand
 
 
 class Shell:
-    def __init__(self, history: HistoryRepository):
+    def __init__(
+        self,
+        history: HistoryRepository,
+        file: FileSystemRepository,
+    ):
         self._history_repo = history
+        self._file_repo = file
         self.commands: dict[str, Command] = {}
-        self.commands['undo'] = self._history_repo.to_cmd()  # TODO: refactor
 
     def add_command(self, name, command: Command):
         self.commands[name] = command
@@ -20,10 +20,7 @@ class Shell:
         cmd = self.commands.get(name)
         if not cmd:
             raise CommandNotFoundError()
-        try:
-            cmd.validate_args(args)
-            cmd.execute(args)
-            if isinstance(cmd, UndoCommand):
-                self._history_repo.add(cmd)
-        except DomainError as e:
-            logger.error(e)
+        cmd.validate_args(args)
+        cmd.execute(args)
+        if isinstance(cmd, UndoCommand):
+            self._history_repo.add(cmd)

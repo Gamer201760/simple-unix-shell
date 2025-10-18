@@ -2,6 +2,12 @@ from typing import Protocol
 
 
 class Command(Protocol):
+    @property
+    def name(self) -> str:
+        """Имя команды"""
+        raise NotImplementedError
+
+    @property
     def description(self) -> str:
         """Описание команды"""
         raise NotImplementedError
