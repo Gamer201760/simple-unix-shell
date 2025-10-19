@@ -29,7 +29,7 @@ class InMemoryFileSystemRepository:
             cur = self._pwd.rstrip('/')
             path = cur + '/' + path
 
-        parts = []
+        parts: list[str] = []
         for part in path.split('/'):
             if part in ('.', ''):
                 continue
@@ -38,5 +38,4 @@ class InMemoryFileSystemRepository:
                     parts.pop()
             else:
                 parts.append(part)
-        # Если пусто, это корень ("/")
         return '/' + '/'.join(parts) if parts else '/'
