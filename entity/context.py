@@ -6,4 +6,4 @@ class CommandContext:
     pwd: str
     home: str
     user: str
-    commands: dict[str, 'Command']
+    commands: dict[str, 'Command']  # TODO: Refactor
