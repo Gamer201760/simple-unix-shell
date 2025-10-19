@@ -4,7 +4,7 @@ from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from repository.in_memory_fs import InMemoryFileSystemRepository
-from usecase.cd import CdCommand
+from usecase.command.cd import CdCommand
 from usecase.interface import FileSystemRepository
 
 UNIX_TREE = {
@@ -24,8 +24,8 @@ def ctx() -> CommandContext:
 
 
 @pytest.fixture
-def fs() -> FileSystemRepository:
-    return InMemoryFileSystemRepository(UNIX_TREE)
+def fs(ctx: CommandContext) -> FileSystemRepository:
+    return InMemoryFileSystemRepository(ctx, UNIX_TREE)
 
 
 @pytest.fixture

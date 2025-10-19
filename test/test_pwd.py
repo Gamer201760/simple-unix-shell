@@ -2,7 +2,7 @@ import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
-from entity.pwd import PwdCommand
+from usecase.command.pwd import PwdCommand
 
 
 @pytest.fixture

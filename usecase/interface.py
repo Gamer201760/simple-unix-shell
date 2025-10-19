@@ -16,11 +16,6 @@ class FileSystemRepository(Protocol):
         """Возвращает текущий абсолютный путь"""
         raise NotImplementedError
 
-    @property
-    def home(self) -> str:
-        """Возвращает домашнюю дирректорию"""
-        raise NotImplementedError
-
     def set_current(self, path: str) -> None:
         """Устанавливает текущий каталог (абсолютный путь)"""
         raise NotImplementedError

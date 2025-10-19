@@ -2,7 +2,7 @@ import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
-from entity.whoami import WhoAmICommand
+from usecase.command.whoami import WhoAmICommand
 
 
 @pytest.fixture
