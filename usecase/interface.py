@@ -7,6 +7,10 @@ class UndoCommand(Protocol):
 
 
 class FileSystemRepository(Protocol):
+    def list_dir(self, path: str) -> list[str]:
+        """Возвращает список объектов в директории"""
+        raise NotImplementedError
+
     def is_dir(self, path: str) -> bool:
         """Проверяет является ли путь директорией"""
         raise NotImplementedError

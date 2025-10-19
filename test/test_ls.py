@@ -4,7 +4,7 @@ from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from repository.in_memory_fs import InMemoryFileSystemRepository
-from usecase.command.cd import CdCommand
+from usecase.command.ls import LsCommand
 from usecase.interface import FileSystemRepository
 
 UNIX_TREE = {
@@ -29,8 +29,8 @@ def fs(ctx: CommandContext) -> FileSystemRepository:
 
 
 @pytest.fixture
-def cd(fs: FileSystemRepository) -> Command:
-    return CdCommand(fs)
+def ls(fs: FileSystemRepository) -> Command:
+    return LsCommand(fs)
 
 
 @pytest.mark.parametrize(
@@ -43,9 +43,9 @@ def cd(fs: FileSystemRepository) -> Command:
         ['/photos/photo1.png'],
     ),
 )
-def test_validate_args_invalid(args: list[str], cd: Command):
+def test_validate_args_invalid(args: list[str], ls: Command):
     with pytest.raises(ValidationError):
-        cd.validate_args(args)
+        ls.validate_args(args)
 
 
 @pytest.mark.parametrize(
@@ -66,27 +66,26 @@ def test_validate_args_invalid(args: list[str], cd: Command):
         ['etc/../..'],
     ),
 )
-def test_validate_args_valid(args: list[str], cd: Command):
-    cd.validate_args(args)
+def test_validate_args_valid(args: list[str], ls: Command):
+    ls.validate_args(args)
 
 
 @pytest.mark.parametrize(
     'args,expected',
     [
-        (['~'], '/home/test'),
-        (['home'], '/home/test/home'),
-        (['/home/test2'], '/home/test2'),
-        (['/home/..'], '/'),
-        (['etc'], '/home/test/etc'),
-        (['etc/..'], '/home/test'),
-        (['etc/../..'], '/home'),
+        (['~'], 'etc'),
+        (['/home/test2'], ''),
+        (['/home/..'], 'home\netc\nphotos'),
+        (['etc'], ''),
+        (['etc/..'], 'etc'),
+        (['etc/../..'], 'test\ntest2'),
+        (['etc/../../../photos'], 'photo1.png\nmy.png\nAzamat.jpg'),
     ],
 )
 def test_execute(
     args: list[str],
     expected: str,
-    cd: Command,
+    ls: Command,
     ctx: CommandContext,
 ):
-    cd.execute(args, ctx)
-    assert ctx.pwd == expected
+    assert ls.execute(args, ctx) == expected
