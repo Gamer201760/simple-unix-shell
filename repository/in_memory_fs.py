@@ -9,7 +9,13 @@ class InMemoryFileSystemRepository:
         self._pwd = pwd
         self._home = home
 
-    def get_current(self) -> str:
+    @property
+    def home(self) -> str:
+        """Возвращает домашнюю дирректорию"""
+        raise NotImplementedError
+
+    @property
+    def current(self) -> str:
         return self._pwd
 
     def set_current(self, path: str) -> None:

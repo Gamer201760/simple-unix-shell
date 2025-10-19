@@ -1,6 +1,7 @@
 import pytest
 
 from entity.command import Command
+from entity.context import CommandContext
 from entity.errors import ValidationError
 from repository.in_memory_fs import InMemoryFileSystemRepository
 from usecase.cd import CdCommand
@@ -15,6 +16,11 @@ UNIX_TREE = {
     '/etc': [],
     '/photos': ['photo1.png', 'my.png', 'Azamat.jpg'],
 }
+
+
+@pytest.fixture
+def ctx() -> CommandContext:
+    return CommandContext(pwd='/home/test', home='/home/test', user='test')
 
 
 @pytest.fixture
@@ -76,6 +82,12 @@ def test_validate_args_valid(args: list[str], cd: Command):
         (['etc/../..'], '/home'),
     ],
 )
-def test_execute(args, expected, cd, fs):
-    cd.execute(args)
-    assert fs.get_current() == expected
+def test_execute(
+    args: list[str],
+    expected: str,
+    cd: Command,
+    fs: FileSystemRepository,
+    ctx: CommandContext,
+):
+    cd.execute(args, ctx)
+    assert fs.current == expected

@@ -1,5 +1,7 @@
 from typing import Protocol
 
+from entity.context import CommandContext
+
 
 class Command(Protocol):
     @property
@@ -16,6 +18,6 @@ class Command(Protocol):
         """Валидация аргументов, выбрасывает DomainError при ошибке"""
         raise NotImplementedError
 
-    def execute(self, args: list[str]) -> str:
+    def execute(self, args: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
         raise NotImplementedError

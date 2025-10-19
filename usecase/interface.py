@@ -11,8 +11,14 @@ class FileSystemRepository(Protocol):
         """Проверяет является ли путь директорией"""
         raise NotImplementedError
 
-    def get_current(self) -> str:
+    @property
+    def current(self) -> str:
         """Возвращает текущий абсолютный путь"""
+        raise NotImplementedError
+
+    @property
+    def home(self) -> str:
+        """Возвращает домашнюю дирректорию"""
         raise NotImplementedError
 
     def set_current(self, path: str) -> None:
@@ -40,13 +46,3 @@ class HistoryRepository(Protocol):
     def clear(self) -> None:
         """Очищает историю команд"""
         raise NotImplementedError
-
-
-class CommandContext:
-    def __init__(
-        self,
-        path_repo: FileSystemRepository,
-        history_repo: HistoryRepository,
-    ) -> None:
-        self.path_repo = path_repo
-        self.history_repo = history_repo
