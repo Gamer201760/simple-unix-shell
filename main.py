@@ -5,6 +5,7 @@ from repository.in_memory_fs import InMemoryFileSystemRepository
 from repository.mock_history_repo import MockHistoryRepository
 from usecase.command.cd import CdCommand
 from usecase.command.ls import LsCommand
+from usecase.command.man import ManCommand
 from usecase.command.pwd import PwdCommand
 from usecase.command.whoami import WhoAmICommand
 from usecase.shell import Shell
@@ -20,23 +21,23 @@ UNIX_TREE = {
 }
 
 
-def main():
+def main() -> None:
+    fs_repo = InMemoryFileSystemRepository(UNIX_TREE)
+    history = MockHistoryRepository()
+    list_cmds: list[Command] = [
+        PwdCommand(),
+        WhoAmICommand(),
+        LsCommand(fs_repo),
+        CdCommand(fs_repo),
+        ManCommand(),
+    ]
+    commands: dict[str, Command] = {cmd.name: cmd for cmd in list_cmds}
     context = CommandContext(
         pwd='/home/test',
         user='test',
         home='/home/test',
+        commands=commands,
     )
-    fs_repo = InMemoryFileSystemRepository(context, UNIX_TREE)
-    history = MockHistoryRepository()
-    commands: dict[str, Command] = {
-        cmd.name: cmd
-        for cmd in [
-            PwdCommand(),
-            WhoAmICommand(),
-            LsCommand(fs_repo),
-            CdCommand(fs_repo),
-        ]
-    }
     shell = Shell(history=history, context=context, commands=commands)
     cli = CLIAdapter(shell)
     cli.run()

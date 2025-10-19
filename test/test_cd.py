@@ -25,7 +25,7 @@ def ctx() -> CommandContext:
 
 @pytest.fixture
 def fs(ctx: CommandContext) -> FileSystemRepository:
-    return InMemoryFileSystemRepository(ctx, UNIX_TREE)
+    return InMemoryFileSystemRepository(UNIX_TREE)
 
 
 @pytest.fixture
@@ -86,7 +86,8 @@ def test_execute(
     args: list[str],
     expected: str,
     cd: Command,
+    fs: FileSystemRepository,
     ctx: CommandContext,
 ):
     cd.execute(args, ctx)
-    assert ctx.pwd == expected
+    assert fs.current == expected

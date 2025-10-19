@@ -25,7 +25,7 @@ def ctx() -> CommandContext:
 
 @pytest.fixture
 def fs(ctx: CommandContext) -> FileSystemRepository:
-    return InMemoryFileSystemRepository(ctx, UNIX_TREE)
+    return InMemoryFileSystemRepository(UNIX_TREE)
 
 
 @pytest.fixture

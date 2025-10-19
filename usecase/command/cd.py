@@ -23,10 +23,13 @@ class CdCommand:
             raise ValidationError(
                 'Команада cd принимает ровно один аргумент, воспользуйтесь man cd'
             )
+        if len(args) == 0:
+            args.append('.')
         if not self._fs.is_dir(args[0]):
             raise ValidationError(f'Это не дирректория {args[0]}')
 
     def execute(self, args: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
         self._fs.set_current(args[0])
+        ctx.pwd = self._fs.current
         return ''

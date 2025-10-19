@@ -1,38 +1,37 @@
-from entity.context import CommandContext
-
-
 class InMemoryFileSystemRepository:
     def __init__(
         self,
-        ctx: CommandContext,
         tree: dict[str, list[str]],  # "директория": ["имя", ...]
+        home: str = '/home/test',
+        pwd: str = '/home/test',
     ):
-        self._ctx = ctx
         self._tree = tree
+        self._pwd = pwd
+        self._home = home
 
     @property
     def current(self) -> str:
-        return self._ctx.pwd
+        return self._pwd
 
     def list_dir(self, path: str) -> list[str]:
         """Возвращает список объектов в директории"""
         return self._tree[self._normalize_path(path)]
 
     def set_current(self, path: str) -> None:
-        self._ctx.pwd = self._normalize_path(path)
+        self._pwd = self._normalize_path(path)
 
     def is_dir(self, path: str) -> bool:
         return self._normalize_path(path) in self._tree
 
     def expanduser(self, path: str) -> str:
         if path.startswith('~'):
-            return self._ctx.home + path[1:]
+            return self._home + path[1:]
         return path
 
     def _normalize_path(self, path: str) -> str:
         path = self.expanduser(path)
         if not path.startswith('/'):
-            cur = self._ctx.pwd.rstrip('/')
+            cur = self._pwd.rstrip('/')
             path = cur + '/' + path
 
         parts: list[str] = []

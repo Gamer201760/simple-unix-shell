@@ -18,7 +18,7 @@ class Shell:
     def run(self, name: str, args: list[str]) -> str:
         cmd = self._commands.get(name)
         if not cmd:
-            raise CommandNotFoundError()
+            raise CommandNotFoundError(f'Команда {name} не найдена')
         cmd.validate_args(args)
         res = cmd.execute(args, self._context)
         if isinstance(cmd, UndoCommand):
