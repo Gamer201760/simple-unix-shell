@@ -15,11 +15,12 @@ class Shell:
         self._context = context
         self._commands = commands
 
-    def run(self, name, args):
+    def run(self, name: str, args: list[str]) -> str:
         cmd = self._commands.get(name)
         if not cmd:
             raise CommandNotFoundError()
         cmd.validate_args(args)
-        cmd.execute(args, self._context)
+        res = cmd.execute(args, self._context)
         if isinstance(cmd, UndoCommand):
             self._history_repo.add(cmd)
+        return res
