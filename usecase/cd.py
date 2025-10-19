@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from entity.errors import ValidationError
 from usecase.interface import FileSystemRepository
 
@@ -24,11 +22,10 @@ class CdCommand:
             raise ValidationError(
                 'Команада cd принимает ровно один аргумент, воспользуйтесь man cd'
             )
-        path = Path(args[0].strip()).expanduser()
-        if not path.is_dir():
-            raise ValidationError(f'Это не дирректория {path}')
+        if not self._fs.is_dir(args[0]):
+            raise ValidationError(f'Это не дирректория {args[0]}')
 
     def execute(self, args: list[str]) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
-        self._fs.set_current(Path(args[0]))
+        self._fs.set_current(args[0])
         return ''
