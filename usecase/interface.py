@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 
@@ -8,11 +7,21 @@ class UndoCommand(Protocol):
 
 
 class FileSystemRepository(Protocol):
-    def get_current(self) -> Path:
+    def is_dir(self, path: str) -> bool:
+        """Проверяет является ли путь директорией"""
+        raise NotImplementedError
+
+    @property
+    def current(self) -> str:
         """Возвращает текущий абсолютный путь"""
         raise NotImplementedError
 
-    def set_current(self, path: Path) -> None:
+    @property
+    def home(self) -> str:
+        """Возвращает домашнюю дирректорию"""
+        raise NotImplementedError
+
+    def set_current(self, path: str) -> None:
         """Устанавливает текущий каталог (абсолютный путь)"""
         raise NotImplementedError
 
@@ -37,13 +46,3 @@ class HistoryRepository(Protocol):
     def clear(self) -> None:
         """Очищает историю команд"""
         raise NotImplementedError
-
-
-class CommandContext:
-    def __init__(
-        self,
-        path_repo: FileSystemRepository,
-        history_repo: HistoryRepository,
-    ) -> None:
-        self.path_repo = path_repo
-        self.history_repo = history_repo

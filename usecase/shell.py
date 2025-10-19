@@ -1,4 +1,5 @@
 from entity.command import Command
+from entity.context import CommandContext
 from entity.errors import CommandNotFoundError
 from usecase.interface import FileSystemRepository, HistoryRepository, UndoCommand
 
@@ -7,20 +8,26 @@ class Shell:
     def __init__(
         self,
         history: HistoryRepository,
-        file: FileSystemRepository,
+        fs: FileSystemRepository,
+        user: str,
     ):
         self._history_repo = history
-        self._file_repo = file
-        self.commands: dict[str, Command] = {}
+        self._fs_repo = fs
+        self._context = CommandContext(
+            pwd=self._fs_repo.current,
+            home=self._fs_repo.home,
+            user=user,
+        )
+        self._commands: dict[str, Command] = {}
 
     def add_command(self, name, command: Command):
-        self.commands[name] = command
+        self._commands[name] = command
 
     def run(self, name, args):
-        cmd = self.commands.get(name)
+        cmd = self._commands.get(name)
         if not cmd:
             raise CommandNotFoundError()
         cmd.validate_args(args)
-        cmd.execute(args)
+        cmd.execute(args, self._context)
         if isinstance(cmd, UndoCommand):
             self._history_repo.add(cmd)
