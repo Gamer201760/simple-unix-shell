@@ -5,7 +5,6 @@ from repository.in_memory_fs import InMemoryFileSystemRepository
 from repository.mock_history_repo import MockHistoryRepository
 from usecase.command.cd import CdCommand
 from usecase.command.ls import LsCommand
-from usecase.command.man import ManCommand
 from usecase.command.pwd import PwdCommand
 from usecase.command.whoami import WhoAmICommand
 from usecase.shell import Shell
@@ -29,14 +28,12 @@ def main() -> None:
         WhoAmICommand(),
         LsCommand(fs_repo),
         CdCommand(fs_repo),
-        ManCommand(),
     ]
     commands: dict[str, Command] = {cmd.name: cmd for cmd in list_cmds}
     context = CommandContext(
         pwd='/home/test',
         user='test',
         home='/home/test',
-        commands=commands,
     )
     shell = Shell(history=history, context=context, commands=commands)
     cli = CLIAdapter(shell)

@@ -21,7 +21,7 @@ class CdCommand:
         """Валидация аргументов, выбрасывает DomainError при ошибке"""
         if len(args) > 1:
             raise ValidationError(
-                'Команада cd принимает ровно один аргумент, воспользуйтесь man cd'
+                'Команада cd принимает ровно один аргумент, воспользуйтесь cd --help'
             )
         if len(args) == 0:
             args.append('.')
