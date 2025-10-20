@@ -27,7 +27,6 @@ class Shell:
         cmd = self._commands.get(name)
         if not cmd:
             raise CommandNotFoundError(f'Команда {name} не найдена')
-        cmd.validate_args(args)
         res = cmd.execute(args, self._context)
         if isinstance(cmd, UndoCommand):
             self._history_repo.add(cmd)

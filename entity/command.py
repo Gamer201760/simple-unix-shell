@@ -14,10 +14,6 @@ class Command(Protocol):
         """Описание команды"""
         raise NotImplementedError
 
-    def validate_args(self, args: list[str]) -> None:
-        """Валидация аргументов, выбрасывает DomainError при ошибке"""
-        raise NotImplementedError
-
     def execute(self, args: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
         raise NotImplementedError

@@ -20,7 +20,7 @@ UNIX_TREE = {
 
 @pytest.fixture
 def ctx() -> CommandContext:
-    return CommandContext(pwd='/home/test', home='/home/test', user='test')
+    return CommandContext(pwd='/home/test', home='/home/test', user='test', commands={})
 
 
 @pytest.fixture
@@ -43,9 +43,9 @@ def ls(fs: FileSystemRepository) -> Command:
         ['/photos/photo1.png'],
     ),
 )
-def test_validate_args_invalid(args: list[str], ls: Command):
+def test_invalid(args: list[str], ls: Command, ctx: CommandContext):
     with pytest.raises(ValidationError):
-        ls.validate_args(args)
+        ls.execute(args, ctx)
 
 
 @pytest.mark.parametrize(
@@ -66,8 +66,8 @@ def test_validate_args_invalid(args: list[str], ls: Command):
         ['etc/../..'],
     ),
 )
-def test_validate_args_valid(args: list[str], ls: Command):
-    ls.validate_args(args)
+def test_valid(args: list[str], ls: Command, ctx: CommandContext):
+    ls.execute(args, ctx)
 
 
 @pytest.mark.parametrize(

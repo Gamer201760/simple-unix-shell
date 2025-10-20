@@ -13,19 +13,33 @@ def pwd() -> Command:
 @pytest.mark.parametrize(
     'args,ctx,expected',
     (
-        (['fafdsf'], CommandContext(pwd='123', home='/home/test', user='test'), '123'),
-        (['341'], CommandContext(pwd='goose', home='/home/test', user='test'), 'goose'),
+        (
+            ['fafdsf'],
+            CommandContext(pwd='123', home='/home/test', user='test', commands={}),
+            '123',
+        ),
+        (
+            ['341'],
+            CommandContext(pwd='goose', home='/home/test', user='test', commands={}),
+            'goose',
+        ),
         (
             ['ieru', '123123'],
-            CommandContext(pwd='palka', home='/home/test', user='test'),
+            CommandContext(pwd='palka', home='/home/test', user='test', commands={}),
             'palka',
         ),
         (
             [],
-            CommandContext(pwd='/home/test/docs', home='/home/test', user='test'),
+            CommandContext(
+                pwd='/home/test/docs', home='/home/test', user='test', commands={}
+            ),
             '/home/test/docs',
         ),
-        ([''], CommandContext(pwd='/etc', home='/home/test', user='test'), '/etc'),
+        (
+            [''],
+            CommandContext(pwd='/etc', home='/home/test', user='test', commands={}),
+            '/etc',
+        ),
     ),
 )
 def test_pwd(args: list[str], ctx: CommandContext, expected: str, pwd: Command):

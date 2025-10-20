@@ -13,23 +13,33 @@ def whoami() -> Command:
 @pytest.mark.parametrize(
     'args,ctx,expected',
     (
-        (['fafdsf'], CommandContext(pwd='123', home='/home/test', user='test'), 'test'),
+        (
+            ['fafdsf'],
+            CommandContext(pwd='123', home='/home/test', user='test', commands={}),
+            'test',
+        ),
         (
             ['341'],
-            CommandContext(pwd='goose', home='/home/test', user='azamat'),
+            CommandContext(pwd='goose', home='/home/test', user='azamat', commands={}),
             'azamat',
         ),
         (
             ['ieru', '123123'],
-            CommandContext(pwd='palka', home='/home/test', user='web'),
+            CommandContext(pwd='palka', home='/home/test', user='web', commands={}),
             'web',
         ),
         (
             [],
-            CommandContext(pwd='/home/test/docs', home='/home/test', user='www'),
+            CommandContext(
+                pwd='/home/test/docs', home='/home/test', user='www', commands={}
+            ),
             'www',
         ),
-        ([''], CommandContext(pwd='/etc', home='/home/test', user='root'), 'root'),
+        (
+            [''],
+            CommandContext(pwd='/etc', home='/home/test', user='root', commands={}),
+            'root',
+        ),
     ),
 )
 def test_whoami(args: list[str], ctx: CommandContext, expected: str, whoami: Command):
