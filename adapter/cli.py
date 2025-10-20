@@ -7,7 +7,7 @@ class CLIAdapter:
         self.shell = shell
 
     def run(self):
-        print('Мой shell. Для выхода нажми Ctrl-D.')
+        print('Simple Unix Shell. Для выхода нажми Ctrl-D.')
         while True:
             try:
                 line = input(f'{self.shell.user}@{self.shell.pwd}$ ').strip()
