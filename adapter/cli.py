@@ -10,9 +10,7 @@ class CLIAdapter:
         print('Мой shell. Для выхода нажми Ctrl-D.')
         while True:
             try:
-                line = input(
-                    f'{self.shell._context.user}@{self.shell._context.pwd}$ '
-                ).strip()
+                line = input(f'{self.shell.user}@{self.shell.pwd}$ ').strip()
                 if not line:
                     continue
                 parts = line.split()

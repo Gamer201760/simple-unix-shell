@@ -15,6 +15,14 @@ class Shell:
         self._context = context
         self._commands = commands
 
+    @property
+    def user(self) -> str:
+        return self._context.user
+
+    @property
+    def pwd(self) -> str:
+        return self._context.pwd
+
     def run(self, name: str, args: list[str]) -> str:
         cmd = self._commands.get(name)
         if not cmd:
