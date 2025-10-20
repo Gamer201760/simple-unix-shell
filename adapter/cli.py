@@ -15,8 +15,14 @@ class CLIAdapter:
                     continue
                 parts = line.split()
                 name = parts[0]
-                args = list(map(str.strip, parts[1:]))
-                res = self.shell.run(name, args)
+                args = []
+                flags = []
+                for arg in parts[1:]:
+                    if arg.startswith('-'):
+                        flags.append(arg)
+                    else:
+                        args.append(arg)
+                res = self.shell.run(name, args, flags)
                 if res != '':
                     print(res)
 

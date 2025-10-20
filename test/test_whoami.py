@@ -13,34 +13,24 @@ def whoami() -> Command:
 @pytest.mark.parametrize(
     'args,ctx,expected',
     (
-        (
-            ['fafdsf'],
-            CommandContext(pwd='123', home='/home/test', user='test', commands={}),
-            'test',
-        ),
+        (['fafdsf'], CommandContext(pwd='123', home='/home/test', user='test'), 'test'),
         (
             ['341'],
-            CommandContext(pwd='goose', home='/home/test', user='azamat', commands={}),
+            CommandContext(pwd='goose', home='/home/test', user='azamat'),
             'azamat',
         ),
         (
             ['ieru', '123123'],
-            CommandContext(pwd='palka', home='/home/test', user='web', commands={}),
+            CommandContext(pwd='palka', home='/home/test', user='web'),
             'web',
         ),
         (
             [],
-            CommandContext(
-                pwd='/home/test/docs', home='/home/test', user='www', commands={}
-            ),
+            CommandContext(pwd='/home/test/docs', home='/home/test', user='www'),
             'www',
         ),
-        (
-            [''],
-            CommandContext(pwd='/etc', home='/home/test', user='root', commands={}),
-            'root',
-        ),
+        ([''], CommandContext(pwd='/etc', home='/home/test', user='root'), 'root'),
     ),
 )
 def test_whoami(args: list[str], ctx: CommandContext, expected: str, whoami: Command):
-    assert whoami.execute(args, ctx) == expected
+    assert whoami.execute(args, [], ctx) == expected

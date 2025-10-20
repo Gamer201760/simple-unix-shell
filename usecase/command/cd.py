@@ -21,14 +21,14 @@ class CdCommand:
         """Валидация аргументов, выбрасывает DomainError при ошибке"""
         if len(args) > 1:
             raise ValidationError(
-                'Команада cd принимает ровно один аргумент, воспользуйтесь cd --help'
+                'Команада cd принимает ровно один аргумент, воспользуйтесь cd -h'
             )
         if len(args) == 0:
             args.append('.')
         if not self._fs.is_dir(args[0]):
             raise ValidationError(f'Это не директория {args[0]}')
 
-    def execute(self, args: list[str], ctx: CommandContext) -> str:
+    def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
         self._validate_args(args)
         self._fs.set_current(args[0])

@@ -10,5 +10,5 @@ class WhoAmICommand:
     def description(self) -> str:
         return 'Отображать действующий идентификатор пользователя'
 
-    def execute(self, args: list[str], ctx: CommandContext) -> str:
+    def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         return ctx.user

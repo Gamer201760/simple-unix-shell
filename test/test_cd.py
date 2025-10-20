@@ -20,7 +20,7 @@ UNIX_TREE = {
 
 @pytest.fixture
 def ctx() -> CommandContext:
-    return CommandContext(pwd='/home/test', home='/home/test', user='test', commands={})
+    return CommandContext(pwd='/home/test', home='/home/test', user='test')
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def cd(fs: FileSystemRepository) -> Command:
 )
 def test_invalid(args: list[str], cd: Command, ctx: CommandContext):
     with pytest.raises(ValidationError):
-        cd.execute(args, ctx)
+        cd.execute(args, [], ctx)
 
 
 @pytest.mark.parametrize(
@@ -67,7 +67,7 @@ def test_invalid(args: list[str], cd: Command, ctx: CommandContext):
     ),
 )
 def test_valid(args: list[str], cd: Command, ctx: CommandContext):
-    cd.execute(args, ctx)
+    cd.execute(args, [], ctx)
 
 
 @pytest.mark.parametrize(
@@ -89,5 +89,5 @@ def test_execute(
     fs: FileSystemRepository,
     ctx: CommandContext,
 ):
-    cd.execute(args, ctx)
+    cd.execute(args, [], ctx)
     assert fs.current == expected

@@ -28,7 +28,7 @@ class LsCommand:
         if not self._fs.is_dir(args[0]):
             raise ValidationError(f'Это не директория {args[0]}')
 
-    def execute(self, args: list[str], ctx: CommandContext) -> str:
+    def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
         self._validate_args(args)
         objects = self._fs.list_dir(args[0])
