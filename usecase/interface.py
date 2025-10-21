@@ -1,9 +1,6 @@
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
-
-@runtime_checkable
-class UndoCommand(Protocol):
-    def undo(self): ...
+from entity.command import UndoCommand
 
 
 class FileSystemRepository(Protocol):

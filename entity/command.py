@@ -1,6 +1,11 @@
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from entity.context import CommandContext
+
+
+@runtime_checkable
+class UndoCommand(Protocol):
+    def undo(self): ...
 
 
 class Command(Protocol):
