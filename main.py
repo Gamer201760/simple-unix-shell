@@ -2,10 +2,12 @@ from adapter.cli import CLIAdapter
 from entity.command import Command
 from entity.context import CommandContext
 from repository.in_memory_fs import InMemoryFileSystemRepository
-from repository.mock_history_repo import MockHistoryRepository
+from repository.in_memory_history_repo import InMemoryHistory
 from usecase.command.cd import CdCommand
 from usecase.command.ls import LsCommand
+from usecase.command.mv import MvCommand
 from usecase.command.pwd import PwdCommand
+from usecase.command.undo import UndoCmd
 from usecase.command.whoami import WhoAmICommand
 from usecase.shell import Shell
 
@@ -22,12 +24,14 @@ UNIX_TREE = {
 
 def main() -> None:
     fs_repo = InMemoryFileSystemRepository(UNIX_TREE)
-    history = MockHistoryRepository()
+    history = InMemoryHistory()
     list_cmds: list[Command] = [
         PwdCommand(),
         WhoAmICommand(),
         LsCommand(fs_repo),
         CdCommand(fs_repo),
+        MvCommand(fs_repo),
+        UndoCmd(history),
     ]
     commands: dict[str, Command] = {cmd.name: cmd for cmd in list_cmds}
     context = CommandContext(

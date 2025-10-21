@@ -4,6 +4,10 @@ from entity.command import UndoCommand
 
 
 class FileSystemRepository(Protocol):
+    def move(self, source: str, dest: str) -> None:
+        """Перемещает файл из source в dest"""
+        raise NotImplementedError
+
     def list_dir(self, path: str) -> list[str]:
         """Возвращает список объектов в директории"""
         raise NotImplementedError
