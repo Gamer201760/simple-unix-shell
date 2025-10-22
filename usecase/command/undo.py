@@ -18,7 +18,4 @@ class UndoCmd:
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
-        last = self._hs.pop()
-        if last:
-            last.undo()
         return ''

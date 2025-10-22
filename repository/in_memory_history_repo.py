@@ -9,11 +9,9 @@ class InMemoryHistory:
         """Добавляет команду в историю"""
         self._history.append(command)
 
-    def last(self) -> UndoCommand | None:
-        """Возвращает последнюю команду, либо None если её нет"""
-        if len(self._history) == 0:
-            return None
-        return self._history[-1]
+    def last(self, n: int) -> list[UndoCommand]:
+        """Возвращает последние n команд"""
+        return self._history[-n:]
 
     def pop(self) -> UndoCommand | None:
         """Удаляет и возвращает последнюю команду, либо None если её нет"""

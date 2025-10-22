@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from entity.command import UndoCommand
+from entity.command import Command
 
 
 class FileSystemRepository(Protocol):
@@ -27,19 +27,19 @@ class FileSystemRepository(Protocol):
 
 
 class HistoryRepository(Protocol):
-    def add(self, command: UndoCommand) -> None:
+    def add(self, command: Command) -> None:
         """Добавляет команду в историю"""
         raise NotImplementedError
 
-    def last(self) -> UndoCommand | None:
-        """Возвращает последнюю команду, либо None если её нет"""
+    def last(self, n: int) -> list[Command]:
+        """Возвращает последние n команд"""
         raise NotImplementedError
 
-    def pop(self) -> UndoCommand | None:
+    def pop(self) -> Command | None:
         """Удаляет и возвращает последнюю команду, либо None если её нет"""
         raise NotImplementedError
 
-    def all(self) -> list[UndoCommand]:
+    def all(self) -> list[Command]:
         """Возвращает список команд истории"""
         raise NotImplementedError
 

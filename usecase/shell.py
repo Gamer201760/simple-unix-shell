@@ -1,7 +1,7 @@
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import CommandNotFoundError
-from usecase.interface import HistoryRepository, UndoCommand
+from usecase.interface import HistoryRepository
 
 
 class Shell:
@@ -30,6 +30,5 @@ class Shell:
         if '-h' in flags:
             return cmd.description
         res = cmd.execute(args, flags, self._context)
-        if isinstance(cmd, UndoCommand):
-            self._history_repo.add(cmd)
+        self._history_repo.add(cmd)
         return res

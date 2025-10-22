@@ -31,6 +31,8 @@ class LsCommand:
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
         self._validate_args(args.copy())
+        if len(args) == 0:  # TODO: refactor
+            args.append('.')
         objects = self._fs.list_dir(args[0])
         if len(objects) == 0:
             return ''
