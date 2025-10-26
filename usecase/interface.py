@@ -51,6 +51,10 @@ class FileSystemRepository(Protocol):
         """Проверяет является ли путь директорией"""
         raise NotImplementedError
 
+    def basename(self, path: str) -> str:
+        """Имя файла или папки"""
+        raise NotImplementedError
+
     @property
     def current(self) -> str:
         """Возвращает текущий абсолютный путь"""

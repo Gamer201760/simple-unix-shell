@@ -58,6 +58,10 @@ class InMemoryFileSystemRepository:
             self._tree[parent].append(name)
         self._files[norm] = data
 
+    def basename(self, path: str) -> str:
+        norm = self._normalize_path(path)  # если требуется нормализовать
+        return norm.rstrip('/').split('/')[-1]
+
     def stat(self, path: str) -> dict:
         norm = self._normalize_path(path)
         if self.is_dir(norm):
