@@ -4,7 +4,7 @@ from entity.undo import UndoRecord
 
 
 class InMemoryUndoRepository:
-    def __init__(self):
+    def __init__(self) -> None:
         self._history: list[Sequence[UndoRecord]] = []
 
     def add(self, record: Sequence[UndoRecord]) -> None:

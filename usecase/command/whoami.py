@@ -1,7 +1,7 @@
 from entity.context import CommandContext
 
 
-class WhoAmICommand:
+class WhoAmI:
     @property
     def name(self) -> str:
         return 'whoami'

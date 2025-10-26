@@ -4,13 +4,13 @@ from entity.context import CommandContext
 from repository.in_memory_fs import InMemoryFileSystemRepository
 from repository.in_memory_history_repo import InMemoryHistory
 from repository.in_memory_undo_repo import InMemoryUndoRepository
-from usecase.command.cd import CdCommand
+from usecase.command.cd import Cd
 from usecase.command.history import History
-from usecase.command.ls import LsCommand
+from usecase.command.ls import Ls
 from usecase.command.mv import Mv
-from usecase.command.pwd import PwdCommand
+from usecase.command.pwd import Pwd
 from usecase.command.undo import Undo
-from usecase.command.whoami import WhoAmICommand
+from usecase.command.whoami import WhoAmI
 from usecase.shell import Shell
 
 UNIX_TREE = {
@@ -29,10 +29,10 @@ def main() -> None:
     undo_repo = InMemoryUndoRepository()
     history = InMemoryHistory()
     list_cmds: list[Command] = [
-        PwdCommand(),
-        WhoAmICommand(),
-        LsCommand(fs_repo),
-        CdCommand(fs_repo),
+        Pwd(),
+        WhoAmI(),
+        Ls(fs_repo),
+        Cd(fs_repo),
         Mv(fs_repo),
         Undo(undo_repo, fs_repo),
         History(history),

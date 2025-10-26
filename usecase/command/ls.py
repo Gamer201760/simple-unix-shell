@@ -3,7 +3,7 @@ from entity.errors import ValidationError
 from usecase.interface import FileSystemRepository
 
 
-class LsCommand:
+class Ls:
     def __init__(self, fs: FileSystemRepository) -> None:
         self._fs = fs
 

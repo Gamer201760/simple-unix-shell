@@ -1,7 +1,7 @@
 from entity.context import CommandContext
 
 
-class PwdCommand:
+class Pwd:
     @property
     def name(self) -> str:
         return 'pwd'

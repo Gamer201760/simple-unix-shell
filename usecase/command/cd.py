@@ -3,7 +3,7 @@ from entity.errors import ValidationError
 from usecase.interface import FileSystemRepository
 
 
-class CdCommand:
+class Cd:
     def __init__(self, fs: FileSystemRepository) -> None:
         self._fs = fs
 

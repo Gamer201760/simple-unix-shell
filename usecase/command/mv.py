@@ -33,10 +33,10 @@ class Mv:
         self._validate_args(args)
         *srcs, dst = args
         for src in srcs:
-            if not (self._fs.exists(src) or self._fs.is_dir(src)):
+            if not (self._fs.is_file(src) or self._fs.is_dir(src)):
                 raise ValidationError(f'Источник не найден: {src}')
 
-            overwrite = self._fs.exists(dst)
+            overwrite = self._fs.is_file(dst)
             overwrite_path = None
             if overwrite:
                 overwrite_path = self._fs.delete(dst)
