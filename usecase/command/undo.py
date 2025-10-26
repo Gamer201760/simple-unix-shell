@@ -21,18 +21,20 @@ class Undo:
         return 'Отменяет последнюю изменяющую команду (mv, cp, rm)'
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
+        print(self._undo_repo.all())
         records = self._undo_repo.pop()
         if records is None:
             raise DomainError('Нет отменяемых команд в истории')
 
         res = ''
         for record in records:
+            print(record)
             match record.action:
                 case 'rm':
                     # rm: src - был удален (откуда), dst - находится в .trash
                     self._fs.move(record.dst, record.src)
                     res += f'Восстановлен {record.src} из корзины\n'
-                    break
+                    continue
                 case 'mv':
                     # mv: src - откуда был перемещён, dst - куда был перемещён
                     self._fs.move(record.dst, record.src)
@@ -42,9 +44,9 @@ class Undo:
                             f'Откат: {record.dst} -> {record.src},\n'
                             f'восстановлен оригинал по {record.dst}\n'
                         )
-                        break
+                        continue
                     res += f'Откат: {record.dst} -> {record.src}'
-                    break
+                    continue
                 case 'cp':
                     # cp: src - исходный файл, dst - путь куда скопировали
                     if (
@@ -53,9 +55,11 @@ class Undo:
                         and record.overwritten_path is not None
                     ):
                         self._fs.move(record.overwritten_path, record.dst)
-                        res += f'Откат: восстановлен старый {record.dst}; копия удалена'
-                        break
+                        res += (
+                            f'Откат: восстановлен старый {record.dst}; копия удалена\n'
+                        )
+                        continue
                     self._fs.delete(record.dst)
-                    res += f'Откат: удалена скопированная копия {record.dst}'
-                    break
+                    res += f'Откат: удалена скопированная копия {record.dst}\n'
+                    continue
         return res
