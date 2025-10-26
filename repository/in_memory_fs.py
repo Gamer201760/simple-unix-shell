@@ -53,7 +53,11 @@ class InMemoryFileSystemRepository:
         parent, name = norm.rsplit('/', 1)
         if not parent:
             parent = '/'
-        return parent in self._tree and name in self._tree[parent]
+        return (
+            parent in self._tree
+            and name in self._tree[parent]
+            and norm not in self._tree
+        )
 
     # /photos/photo1.png /photos/mv_photo.png
     def move(self, source: str, dest: str) -> None:
@@ -100,6 +104,7 @@ class InMemoryFileSystemRepository:
         self._tree[src_dir].remove(src_name)
         if dst_name not in self._tree[target_dir]:
             self._tree[target_dir].append(dst_name)
+        print(self._tree)
 
     def list_dir(self, path: str) -> list[str]:
         """Возвращает список объектов в директории"""
