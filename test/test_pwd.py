@@ -2,12 +2,12 @@ import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
-from usecase.command.pwd import PwdCommand
+from usecase.command.pwd import Pwd
 
 
 @pytest.fixture
 def pwd() -> Command:
-    return PwdCommand()
+    return Pwd()
 
 
 @pytest.mark.parametrize(
@@ -29,4 +29,4 @@ def pwd() -> Command:
     ),
 )
 def test_pwd(args: list[str], ctx: CommandContext, expected: str, pwd: Command):
-    assert pwd.execute(args, ctx) == expected
+    assert pwd.execute(args, [], ctx) == expected

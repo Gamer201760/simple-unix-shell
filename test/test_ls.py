@@ -4,7 +4,7 @@ from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from repository.in_memory_fs import InMemoryFileSystemRepository
-from usecase.command.ls import LsCommand
+from usecase.command.ls import Ls
 from usecase.interface import FileSystemRepository
 
 UNIX_TREE = {
@@ -25,12 +25,12 @@ def ctx() -> CommandContext:
 
 @pytest.fixture
 def fs(ctx: CommandContext) -> FileSystemRepository:
-    return InMemoryFileSystemRepository(ctx, UNIX_TREE)
+    return InMemoryFileSystemRepository(UNIX_TREE)
 
 
 @pytest.fixture
 def ls(fs: FileSystemRepository) -> Command:
-    return LsCommand(fs)
+    return Ls(fs)
 
 
 @pytest.mark.parametrize(
@@ -43,9 +43,9 @@ def ls(fs: FileSystemRepository) -> Command:
         ['/photos/photo1.png'],
     ),
 )
-def test_validate_args_invalid(args: list[str], ls: Command):
+def test_invalid(args: list[str], ls: Command, ctx: CommandContext):
     with pytest.raises(ValidationError):
-        ls.validate_args(args)
+        ls.execute(args, [], ctx)
 
 
 @pytest.mark.parametrize(
@@ -66,8 +66,8 @@ def test_validate_args_invalid(args: list[str], ls: Command):
         ['etc/../..'],
     ),
 )
-def test_validate_args_valid(args: list[str], ls: Command):
-    ls.validate_args(args)
+def test_valid(args: list[str], ls: Command, ctx: CommandContext):
+    ls.execute(args, [], ctx)
 
 
 @pytest.mark.parametrize(
@@ -88,4 +88,4 @@ def test_execute(
     ls: Command,
     ctx: CommandContext,
 ):
-    assert ls.execute(args, ctx) == expected
+    assert ls.execute(args, [], ctx) == expected

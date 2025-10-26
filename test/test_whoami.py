@@ -2,12 +2,12 @@ import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
-from usecase.command.whoami import WhoAmICommand
+from usecase.command.whoami import WhoAmI
 
 
 @pytest.fixture
 def whoami() -> Command:
-    return WhoAmICommand()
+    return WhoAmI()
 
 
 @pytest.mark.parametrize(
@@ -33,4 +33,4 @@ def whoami() -> Command:
     ),
 )
 def test_whoami(args: list[str], ctx: CommandContext, expected: str, whoami: Command):
-    assert whoami.execute(args, ctx) == expected
+    assert whoami.execute(args, [], ctx) == expected

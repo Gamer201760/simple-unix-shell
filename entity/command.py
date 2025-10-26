@@ -1,6 +1,12 @@
-from typing import Protocol
+from typing import Protocol, Sequence, runtime_checkable
 
 from entity.context import CommandContext
+from entity.undo import UndoRecord
+
+
+@runtime_checkable
+class UndoCommand(Protocol):
+    def undo(self) -> Sequence[UndoRecord]: ...
 
 
 class Command(Protocol):
@@ -14,10 +20,6 @@ class Command(Protocol):
         """Описание команды"""
         raise NotImplementedError
 
-    def validate_args(self, args: list[str]) -> None:
-        """Валидация аргументов, выбрасывает DomainError при ошибке"""
-        raise NotImplementedError
-
-    def execute(self, args: list[str], ctx: CommandContext) -> str:
+    def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         """Выполнение команды, выбрасывает DomainError при ошибке"""
         raise NotImplementedError
