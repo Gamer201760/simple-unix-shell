@@ -28,7 +28,8 @@ class Shell:
         if not cmd:
             raise CommandNotFoundError(f'Команда {name} не найдена')
         if '-h' in flags:
+            self._history_repo.add(name, args, flags)  # TODO: refactor
             return cmd.description
         res = cmd.execute(args, flags, self._context)
-        self._history_repo.add(cmd)
+        self._history_repo.add(name, args, flags)
         return res

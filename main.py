@@ -4,6 +4,7 @@ from entity.context import CommandContext
 from repository.in_memory_fs import InMemoryFileSystemRepository
 from repository.in_memory_history_repo import InMemoryHistory
 from usecase.command.cd import CdCommand
+from usecase.command.history import History
 from usecase.command.ls import LsCommand
 from usecase.command.mv import MvCommand
 from usecase.command.pwd import PwdCommand
@@ -32,6 +33,7 @@ def main() -> None:
         CdCommand(fs_repo),
         MvCommand(fs_repo),
         UndoCmd(history),
+        History(history),
     ]
     commands: dict[str, Command] = {cmd.name: cmd for cmd in list_cmds}
     context = CommandContext(

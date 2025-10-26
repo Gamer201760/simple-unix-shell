@@ -23,16 +23,16 @@ class LsCommand:
             raise ValidationError(
                 'Команада cd принимает ровно один аргумент, воспользуйтесь man cd'
             )
+
+    def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
+        """Выполнение команды, выбрасывает DomainError при ошибке"""
+        self._validate_args(args)
+
         if len(args) == 0:
             args.append('.')
         if not self._fs.is_dir(args[0]):
             raise ValidationError(f'Это не директория {args[0]}')
 
-    def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
-        """Выполнение команды, выбрасывает DomainError при ошибке"""
-        self._validate_args(args.copy())
-        if len(args) == 0:  # TODO: refactor
-            args.append('.')
         objects = self._fs.list_dir(args[0])
         if len(objects) == 0:
             return ''

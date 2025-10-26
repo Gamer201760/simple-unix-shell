@@ -1,7 +1,5 @@
 from typing import Protocol
 
-from entity.command import Command
-
 
 class FileSystemRepository(Protocol):
     def move(self, source: str, dest: str) -> None:
@@ -27,20 +25,16 @@ class FileSystemRepository(Protocol):
 
 
 class HistoryRepository(Protocol):
-    def add(self, command: Command) -> None:
+    def add(self, name: str, args: list[str], flags: list[str]) -> None:
         """Добавляет команду в историю"""
         raise NotImplementedError
 
-    def last(self, n: int) -> list[Command]:
+    def last(self, n: int) -> list[str]:
         """Возвращает последние n команд"""
         raise NotImplementedError
 
-    def pop(self) -> Command | None:
-        """Удаляет и возвращает последнюю команду, либо None если её нет"""
-        raise NotImplementedError
-
-    def all(self) -> list[Command]:
-        """Возвращает список команд истории"""
+    def all(self) -> list[str]:
+        """Возвращает все последние команды"""
         raise NotImplementedError
 
     def clear(self) -> None:

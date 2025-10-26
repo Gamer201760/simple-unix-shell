@@ -1,26 +1,17 @@
-from entity.command import UndoCommand
-
-
 class InMemoryHistory:
     def __init__(self) -> None:
-        self._history: list[UndoCommand] = []
+        self._history: list[str] = []
 
-    def add(self, command: UndoCommand) -> None:
+    def add(self, name: str, args: list[str], flags: list[str]) -> None:
         """Добавляет команду в историю"""
-        self._history.append(command)
+        self._history.append(name + ' ' + ' '.join(args) + ' '.join(flags))
 
-    def last(self, n: int) -> list[UndoCommand]:
+    def last(self, n: int) -> list[str]:
         """Возвращает последние n команд"""
         return self._history[-n:]
 
-    def pop(self) -> UndoCommand | None:
-        """Удаляет и возвращает последнюю команду, либо None если её нет"""
-        if len(self._history) == 0:
-            return None
-        return self._history.pop()
-
-    def all(self) -> list[UndoCommand]:
-        """Возвращает список команд истории"""
+    def all(self) -> list[str]:
+        """Возвращает последние n команд"""
         return self._history
 
     def clear(self) -> None:
