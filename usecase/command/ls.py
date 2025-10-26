@@ -21,7 +21,7 @@ class Ls:
         """Валидация аргументов, выбрасывает DomainError при ошибке"""
         if len(args) > 1:
             raise ValidationError(
-                'Команада cd принимает ровно один аргумент, воспользуйтесь man cd'
+                'Команада ls принимает ровно один аргумент, воспользуйтесь man ls'
             )
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
