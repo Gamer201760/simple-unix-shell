@@ -16,7 +16,7 @@ UNIX_TREE = {
     '/home/test/etc': [],
     '/home/test2': [],
     '/etc': [],
-    '/photos': ['photo1.png', 'my.png', 'Azamat.jpg'],
+    '/photos': ['photo1.png', 'my.png', 'Azamat.jpg', 'new photo.png'],
 }
 
 
@@ -55,6 +55,7 @@ def test_invalid_mv(args: list[str], mv: Command, ctx: CommandContext):
         ('/photos/photo1.png', '/photos/new_photo.png', ('/photos', 'new_photo.png')),
         ('/photos/my.png', '/home/test/etc/my.png', ('/home/test/etc', 'my.png')),
         ('/photos/Azamat.jpg', '/home/test/Azamat.jpg', ('/home/test', 'Azamat.jpg')),
+        ('/photos/new photo.png', '~', ('/home/test', 'new photo.png')),
         # move dir into another dir
         ('/home/test/etc', '/photos/etc', ('/photos', 'etc')),
     ],
