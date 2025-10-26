@@ -1,9 +1,19 @@
-from typing import Protocol
+from typing import Protocol, Sequence
+
+from entity.undo import UndoRecord
 
 
 class FileSystemRepository(Protocol):
+    def delete(self, source: str) -> str:
+        """Удаляет файл source"""
+        raise NotImplementedError
+
     def move(self, source: str, dest: str) -> None:
         """Перемещает файл из source в dest"""
+        raise NotImplementedError
+
+    def exists(self, path: str) -> bool:
+        """Проверяет существования файла"""
         raise NotImplementedError
 
     def list_dir(self, path: str) -> list[str]:
@@ -40,3 +50,25 @@ class HistoryRepository(Protocol):
     def clear(self) -> None:
         """Очищает историю команд"""
         raise NotImplementedError
+
+
+class UndoRepository(Protocol):
+    def add(self, record: Sequence[UndoRecord]) -> None:
+        """Добавить одну или несколько UndoRecord в стек истории undo"""
+        ...
+
+    def pop(self) -> Sequence[UndoRecord] | None:
+        """Извлечь последнюю пачку UndoRecord для отката"""
+        ...
+
+    def last(self) -> Sequence[UndoRecord] | None:
+        """Получить последнюю пачку UndoRecord без удаления"""
+        ...
+
+    def clear(self) -> None:
+        """Очистить всю историю undo"""
+        ...
+
+    def all(self) -> list[Sequence[UndoRecord]]:
+        """Получить весь стек undo, для истории или сериализации"""
+        ...

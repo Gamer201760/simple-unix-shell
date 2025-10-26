@@ -3,12 +3,13 @@ from entity.command import Command
 from entity.context import CommandContext
 from repository.in_memory_fs import InMemoryFileSystemRepository
 from repository.in_memory_history_repo import InMemoryHistory
+from repository.in_memory_undo_repo import InMemoryUndoRepository
 from usecase.command.cd import CdCommand
 from usecase.command.history import History
 from usecase.command.ls import LsCommand
-from usecase.command.mv import MvCommand
+from usecase.command.mv import Mv
 from usecase.command.pwd import PwdCommand
-from usecase.command.undo import UndoCmd
+from usecase.command.undo import Undo
 from usecase.command.whoami import WhoAmICommand
 from usecase.shell import Shell
 
@@ -25,14 +26,15 @@ UNIX_TREE = {
 
 def main() -> None:
     fs_repo = InMemoryFileSystemRepository(UNIX_TREE)
+    undo_repo = InMemoryUndoRepository()
     history = InMemoryHistory()
     list_cmds: list[Command] = [
         PwdCommand(),
         WhoAmICommand(),
         LsCommand(fs_repo),
         CdCommand(fs_repo),
-        MvCommand(fs_repo),
-        UndoCmd(history),
+        Mv(fs_repo),
+        Undo(undo_repo, fs_repo),
         History(history),
     ]
     commands: dict[str, Command] = {cmd.name: cmd for cmd in list_cmds}
@@ -41,7 +43,9 @@ def main() -> None:
         user='test',
         home='/home/test',
     )
-    shell = Shell(history=history, context=context, commands=commands)
+    shell = Shell(
+        history=history, undo_repo=undo_repo, context=context, commands=commands
+    )
     cli = CLIAdapter(shell)
     cli.run()
 

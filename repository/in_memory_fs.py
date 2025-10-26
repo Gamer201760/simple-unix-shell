@@ -1,3 +1,6 @@
+from uuid import uuid4
+
+
 class InMemoryFileSystemRepository:
     def __init__(
         self,
@@ -12,6 +15,45 @@ class InMemoryFileSystemRepository:
     @property
     def current(self) -> str:
         return self._pwd
+
+    def delete(self, source: str) -> str:
+        """Удаляет файл source (перемещает в .trash с уникальным именем), возвращает путь в .trash"""
+        src_path = self._normalize_path(source)
+
+        parent, name = src_path.rsplit('/', 1)
+        if not parent:
+            parent = '/'
+
+        # Проверяем, что файл существует
+        if parent not in self._tree or name not in self._tree[parent]:
+            raise FileNotFoundError(f'File {src_path} not found')
+
+        # Генерируем уникальное имя через uuid4
+        trash_dir = '/.trash'
+        if trash_dir not in self._tree:
+            self._tree[trash_dir] = []
+
+        unique_name = f'{name}.{uuid4().hex}'
+        trash_path = f'{trash_dir}/{unique_name}'
+
+        # Удаляем файл из родительской директории
+        self._tree[parent].remove(name)
+        # Добавляем файл в .trash
+        self._tree[trash_dir].append(unique_name)
+
+        # Если это была папка — переносим поддерево
+        if src_path in self._tree:
+            self._tree[trash_path] = self._tree.pop(src_path)
+
+        return trash_path
+
+    def exists(self, path: str) -> bool:
+        """Проверяет наличие файла"""
+        norm = self._normalize_path(path)
+        parent, name = norm.rsplit('/', 1)
+        if not parent:
+            parent = '/'
+        return parent in self._tree and name in self._tree[parent]
 
     # /photos/photo1.png /photos/mv_photo.png
     def move(self, source: str, dest: str) -> None:

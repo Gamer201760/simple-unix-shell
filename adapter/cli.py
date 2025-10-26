@@ -27,10 +27,10 @@ class CLIAdapter:
                     print(res)
 
             except EOFError:
-                print('\nЗавершение shell.')
+                print('\nЗавершение shell')
                 break
             except DomainError as e:
                 print(e)
             except KeyboardInterrupt:
-                print('\nShell завершён по Ctrl-C.')
+                print('\nShell завершён по Ctrl-C. Лучше через Ctrl-D')
                 break

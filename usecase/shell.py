@@ -1,17 +1,19 @@
-from entity.command import Command
+from entity.command import Command, UndoCommand
 from entity.context import CommandContext
 from entity.errors import CommandNotFoundError
-from usecase.interface import HistoryRepository
+from usecase.interface import HistoryRepository, UndoRepository
 
 
 class Shell:
     def __init__(
         self,
         history: HistoryRepository,
+        undo_repo: UndoRepository,
         context: CommandContext,
         commands: dict[str, Command],
     ):
         self._history_repo = history
+        self._undo_repo = undo_repo
         self._context = context
         self._commands = commands
 
@@ -32,4 +34,6 @@ class Shell:
             return cmd.description
         res = cmd.execute(args, flags, self._context)
         self._history_repo.add(name, args, flags)
+        if isinstance(cmd, UndoCommand):
+            self._undo_repo.add(cmd.undo())
         return res
