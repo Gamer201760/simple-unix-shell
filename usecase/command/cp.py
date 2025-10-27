@@ -15,7 +15,7 @@ class Cp:
 
     @property
     def description(self) -> str:
-        return 'Копирует файл(ы): cp <source>... <dest>'
+        return 'Копирует файл: cp <source> <dest>'
 
     def undo(self) -> list[UndoRecord]:
         return self._undo_records.copy()
@@ -34,7 +34,7 @@ class Cp:
         # Если несколько исходников — dst должен быть директорией!
         if len(srcs) > 1 and not self._fs.is_dir(dst):
             raise ValidationError(
-                'Если копируется несколько файлов, последний аргумент должен быть директорией!'
+                'Если копируется несколько файлов, последний аргумент должен быть директорией'
             )
 
         for src in srcs:
