@@ -1,10 +1,10 @@
-from typing import Protocol, Sequence
+from typing import Iterator, Protocol, Sequence
 
 from entity.undo import UndoRecord
 
 
 class FileSystemRepository(Protocol):
-    def walk(self, path: str) -> list[str]:
+    def walk(self, path: str) -> Iterator[tuple[str, list[str], list[str]]]:
         """
         Возвращает список всех файлов и директорий,
         начиная с path рекурсивно

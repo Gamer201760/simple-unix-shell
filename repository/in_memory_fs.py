@@ -1,3 +1,4 @@
+from typing import Iterator
 from uuid import uuid4
 
 
@@ -17,18 +18,36 @@ class InMemoryFileSystemRepository:
     def current(self) -> str:
         return self._pwd
 
-    def walk(self, path: str) -> list[str]:
+    def walk(self, path: str) -> Iterator[tuple[str, list[str], list[str]]]:
+        """Итеративный обход директории, аналогичный os.walk (top-down)."""
         path = self._normalize_path(path)
-        results = []
+        if not self.is_dir(path):
+            raise FileNotFoundError(f'Directory {path} not found')
+
         stack = [path]
         while stack:
-            cur = stack.pop()
-            results.append(cur)
-            if cur in self._tree:
-                for name in self._tree[cur]:
-                    child = cur.rstrip('/') + '/' + name if cur != '/' else '/' + name
-                    stack.append(child)
-        return results
+            root = stack.pop()
+            dirnames = []
+            filenames = []
+
+            if root in self._tree:
+                for name in self._tree[root]:
+                    full_child = (
+                        root.rstrip('/') + '/' + name if root != '/' else '/' + name
+                    )
+                    if self.is_dir(full_child):
+                        dirnames.append(name)
+                    else:
+                        filenames.append(name)
+
+            # Добавляем поддиректории в стек в обратном порядке, чтобы сохранить порядок посещения (top-down)
+            for name in reversed(dirnames):
+                full_child = (
+                    root.rstrip('/') + '/' + name if root != '/' else '/' + name
+                )
+                stack.append(full_child)
+
+            yield root, dirnames, filenames
 
     def mkdir(self, path: str) -> None:
         norm = self._normalize_path(path)
