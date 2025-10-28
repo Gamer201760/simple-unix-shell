@@ -1,3 +1,4 @@
+import os
 from typing import Iterator
 from uuid import uuid4
 
@@ -181,3 +182,15 @@ class InMemoryFileSystemRepository:
             else:
                 parts.append(part)
         return '/' + '/'.join(parts) if parts else '/'
+
+    def path_join(self, *parts: str) -> str:
+        """Аналог os.path.join: интеллектуально соединяет компоненты пути"""
+        return os.path.join(*parts)
+
+    def path_dirname(self, path: str) -> str:
+        """Аналог os.path.dirname: директория-родитель пути"""
+        return os.path.dirname(path)
+
+    def path_relpath(self, path: str, start: str) -> str:
+        """Аналог os.path.relpath: относительный путь от start до path"""
+        return os.path.relpath(path, start)

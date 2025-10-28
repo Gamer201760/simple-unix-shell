@@ -64,6 +64,18 @@ class FileSystemRepository(Protocol):
         """Устанавливает текущий каталог (абсолютный путь)"""
         raise NotImplementedError
 
+    def path_join(self, *parts: str) -> str:
+        """Аналог os.path.join: интеллектуально соединяет компоненты пути"""
+        raise NotImplementedError
+
+    def path_dirname(self, path: str) -> str:
+        """Аналог os.path.dirname: директория-родитель пути"""
+        raise NotImplementedError
+
+    def path_relpath(self, path: str, start: str) -> str:
+        """Аналог os.path.relpath: относительный путь от start до path"""
+        raise NotImplementedError
+
 
 class HistoryRepository(Protocol):
     def add(self, name: str, args: list[str], flags: list[str]) -> None:
