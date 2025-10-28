@@ -43,9 +43,6 @@ class Cp:
         )
 
     def _copy_file_with_undo(self, src_file: str, dst_file: str) -> None:
-        # Поддержка перезаписи с undo:
-        # - если dst_file существует как файл — удалить (получить backup) и потом копировать
-        # - если dst_file — директория, это ошибка
         self._ensure_parent_dir_exists(dst_file)
 
         backup: str | None = None
@@ -66,11 +63,7 @@ class Cp:
         return ('-r' in flags) or ('-R' in flags) or ('--recursive' in flags)
 
     def _is_dir_content_path(self, path: str) -> tuple[bool, str]:
-        """
-        Возвращает (is_content_mode, base_dir_path).
-        content_mode=True для путей вида "<dir>/." — копировать содержимое dir внутрь назначения.
-        """
-        if self._fs.basename(path) == '.':
+        if self._fs.basename(path) == '*':
             base_dir = self._fs.path_dirname(path)
             return True, base_dir if base_dir else path
         return False, path

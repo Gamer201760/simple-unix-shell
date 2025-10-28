@@ -136,15 +136,13 @@ def test_cp_r_conflict_file_vs_dir_in_tree(
     # приёмник: /dst/docs/readme (директория)
     if not fs.is_dir('/dst'):
         fs.mkdir('/dst')
-    if not fs.is_dir('/dst/src'):
-        fs.mkdir('/dst/src')
-    if not fs.is_dir('/dst/src/docs'):
-        fs.mkdir('/dst/src/docs')
-    if not fs.is_dir('/dst/src/docs/readme'):
-        fs.mkdir('/dst/src/docs/readme')
+    if not fs.is_dir('/dst/docs'):
+        fs.mkdir('/dst/docs')
+    if not fs.is_dir('/dst/docs/readme'):
+        fs.mkdir('/dst/docs/readme')
 
     with pytest.raises(ValidationError):
-        cp.execute(['/src', '/dst'], ['-r'], ctx)
+        cp.execute(['/src/*', '/dst'], ['-r'], ctx)
 
 
 # 7) Множественные источники директорий — только в существующую директорию
