@@ -41,7 +41,6 @@ class InMemoryFileSystemRepository:
                     else:
                         filenames.append(name)
 
-            # Добавляем поддиректории в стек в обратном порядке, чтобы сохранить порядок посещения (top-down)
             for name in reversed(dirnames):
                 full_child = (
                     root.rstrip('/') + '/' + name if root != '/' else '/' + name
@@ -79,7 +78,7 @@ class InMemoryFileSystemRepository:
         self._files[norm] = data
 
     def basename(self, path: str) -> str:
-        norm = self._normalize_path(path)  # если требуется нормализовать
+        norm = self._normalize_path(path)
         return norm.rstrip('/').split('/')[-1]
 
     def stat(self, path: str) -> dict:
