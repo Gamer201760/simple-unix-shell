@@ -6,7 +6,7 @@ from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from repository.in_memory_fs import InMemoryFileSystemRepository
-from usecase.command.cp import Cp  # команда для теста
+from usecase.command.cp import Cp
 from usecase.interface import FileSystemRepository
 
 UNIX_TREE = {

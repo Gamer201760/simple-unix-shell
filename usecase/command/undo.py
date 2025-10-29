@@ -31,12 +31,10 @@ class Undo:
             print(record)
             match record.action:
                 case 'rm':
-                    # rm: src - был удален (откуда), dst - находится в .trash
                     self._fs.move(record.dst, record.src)
                     res += f'Восстановлен {record.src} из корзины\n'
                     continue
                 case 'mv':
-                    # mv: src - откуда был перемещён, dst - куда был перемещён
                     self._fs.move(record.dst, record.src)
                     if record.overwrite and record.overwritten_path is not None:
                         self._fs.move(record.overwritten_path, record.dst)
@@ -48,7 +46,6 @@ class Undo:
                     res += f'Откат: {record.dst} -> {record.src}'
                     continue
                 case 'cp':
-                    # cp: src - исходный файл, dst - путь куда скопировали
                     if (
                         record.overwrite is not None
                         and record.overwrite

@@ -18,7 +18,7 @@ class Rm:
         return 'Удаляет файлы и директории (директории только с -r): rm [-r] <path...>'
 
     def undo(self) -> list[UndoRecord]:
-        return self._undo_records.copy()
+        return self._undo_records.copy()[::-1]
 
     def _validate_args(self, args: list[str]) -> None:
         if len(args) < 1:
