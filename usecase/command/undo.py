@@ -21,14 +21,12 @@ class Undo:
         return 'Отменяет последнюю изменяющую команду (mv, cp, rm)'
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
-        print(self._undo_repo.all())
         records = self._undo_repo.pop()
         if records is None:
             raise DomainError('Нет отменяемых команд в истории')
 
         res = ''
         for record in records:
-            print(record)
             match record.action:
                 case 'rm':
                     self._fs.move(record.dst, record.src)

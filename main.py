@@ -10,6 +10,7 @@ from usecase.command.history import History
 from usecase.command.ls import Ls
 from usecase.command.mv import Mv
 from usecase.command.pwd import Pwd
+from usecase.command.rm import Rm
 from usecase.command.undo import Undo
 from usecase.command.whoami import WhoAmI
 from usecase.shell import Shell
@@ -36,6 +37,7 @@ def main() -> None:
         Cd(fs_repo),
         Mv(fs_repo),
         Cp(fs_repo),
+        Rm(fs_repo),
         Undo(undo_repo, fs_repo),
         History(history),
     ]
