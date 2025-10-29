@@ -33,12 +33,11 @@ def cp(fs: FileSystemRepository) -> Command:
     return Cp(fs)
 
 
-# 1) Копирование директории в несуществующий путь: создаётся новый корень назначения (dst)
+# Копирование директории в несуществующий путь
 def test_cp_r_dir_to_new_path_creates_root(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
     assert not fs.is_dir('/backup')
-    # добавим содержимое в исходные файлы, чтобы проверить перезапись содержимого
     fs.write('/photos/photo1.png', 'SRC1')
     fs.write('/photos/my.png', 'SRC2')
     fs.write('/photos/Azamat.jpg', 'SRC3')
@@ -53,11 +52,10 @@ def test_cp_r_dir_to_new_path_creates_root(
     assert fs.read('/backup/Azamat.jpg') == 'SRC3'
 
 
-# 2) Копирование директории в существующую директорию: src размещается внутри dst/basename(src)
+# Копирование директории в существующую директорию
 def test_cp_r_dir_into_existing_dir_places_inside(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
-    # /home уже существует
     cp.execute(['/photos', '/home'], ['-r'], ctx)
     assert fs.is_dir('/home/photos')
     assert fs.is_file('/home/photos/photo1.png')
@@ -65,7 +63,7 @@ def test_cp_r_dir_into_existing_dir_places_inside(
     assert fs.is_file('/home/photos/Azamat.jpg')
 
 
-# 3) Копирование директории без -r должно быть ошибкой
+# Копирование директории без -r должно быть ошибкой
 def test_cp_dir_without_r_is_error(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
@@ -73,46 +71,37 @@ def test_cp_dir_without_r_is_error(
         cp.execute(['/photos', '/home/new_photos'], [], ctx)
 
 
-# 4) Нельзя перезаписать существующий файл директорией
+# Нельзя перезаписать существующий файл директорией
 def test_cp_r_dir_over_file_is_error(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
-    # сделаем файл-назначение
     fs.write('/photos/my.png', 'OLD_FILE')
     with pytest.raises(ValidationError):
         cp.execute(
             ['/home'],
             ['-r'],
             ctx,
-        )  # dst отсутствует в списке -> недостаточно аргументов
-    # корректный вызов c явным dst-файлом
+        )
     with pytest.raises(ValidationError):
         cp.execute(['/home', '/photos/my.png'], ['-r'], ctx)
 
 
-# 5) Перезапись файлов внутри существующей директории с undo
+# Перезапись файлов внутри существующей директории с undo
 def test_cp_r_overwrite_with_undo_records(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
-    # подготовим исходник с контентом
     fs.write('/photos/photo1.png', 'SRC1')
     fs.write('/photos/my.png', 'SRC2')
 
-    # подготовим существующий dst с конкурентными файлами
     if not fs.is_dir('/backup/photos/'):
         fs.mkdir('/backup/photos')
     fs.write('/backup/photos/photo1.png', 'OLD1')
-    # файл my.png в dst отсутствует, чтобы проверить смешанный сценарий overwrite/new
 
     cp.execute(['/photos', '/backup'], ['-r'], ctx)
-    # проверяем содержимое
     assert fs.read('/backup/photos/photo1.png') == 'SRC1'
     assert fs.read('/backup/photos/my.png') == 'SRC2'
 
-    # проверяем undo-записи
-    # ожидается по одной записи
     undo = getattr(cp, 'undo')()
-    print(undo)
     copied_targets = {u.dst for u in undo}
     assert '/backup/photos/photo1.png' in copied_targets
     assert '/backup/photos/my.png' in copied_targets
@@ -126,14 +115,12 @@ def test_cp_r_overwrite_with_undo_records(
 def test_cp_r_conflict_file_vs_dir_in_tree(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
-    # источник: /src/docs/readme (файл)
     if not fs.is_dir('/src'):
         fs.mkdir('/src')
     if not fs.is_dir('/src/docs'):
         fs.mkdir('/src/docs')
     fs.write('/src/docs/readme', 'TEXT')
 
-    # приёмник: /dst/docs/readme (директория)
     if not fs.is_dir('/dst'):
         fs.mkdir('/dst')
     if not fs.is_dir('/dst/docs'):
@@ -145,20 +132,19 @@ def test_cp_r_conflict_file_vs_dir_in_tree(
         cp.execute(['/src/*', '/dst'], ['-r'], ctx)
 
 
-# 7) Множественные источники директорий — только в существующую директорию
+# несколько директорий только в существующую директорию
 def test_cp_r_multiple_sources_into_existing_dir(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
-    # создадим пустую директорию назначения
     if not fs.is_dir('/mnt'):
         fs.mkdir('/mnt')
 
     cp.execute(['/etc', '/photos', '/mnt'], ['-r'], ctx)
-    # обе директории должны оказаться внутри /mnt
+    # обе директории должны оказаться в /mnt
     assert fs.is_dir('/mnt/etc')
     assert fs.is_dir('/mnt/photos')
     assert fs.is_file('/mnt/photos/photo1.png')
 
-    # если dst не директория — ошибка
+    # если dst не директория это ошибка
     with pytest.raises(ValidationError):
         cp.execute(['/etc', '/photos', '/mnt/new_place'], ['-r'], ctx)
