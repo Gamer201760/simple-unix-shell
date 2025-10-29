@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 
 from entity.command import Command
@@ -25,7 +27,7 @@ def ctx() -> CommandContext:
 
 @pytest.fixture
 def fs(ctx: CommandContext) -> FileSystemRepository:
-    return InMemoryFileSystemRepository(UNIX_TREE)
+    return InMemoryFileSystemRepository(deepcopy(UNIX_TREE))
 
 
 @pytest.fixture
@@ -93,6 +95,8 @@ def test_cp_r_overwrite_with_undo_records(
     fs.write('/photos/photo1.png', 'SRC1')
     fs.write('/photos/my.png', 'SRC2')
 
+    if not fs.is_dir('/backup'):
+        fs.mkdir('/backup')
     if not fs.is_dir('/backup/photos/'):
         fs.mkdir('/backup/photos')
     fs.write('/backup/photos/photo1.png', 'OLD1')
