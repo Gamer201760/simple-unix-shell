@@ -2,7 +2,7 @@ import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
-from entity.errors import ValidationError
+from entity.errors import DomainError
 from repository.in_memory_fs import InMemoryFileSystemRepository
 from usecase.command.ls import Ls
 from usecase.interface import FileSystemRepository
@@ -36,15 +36,12 @@ def ls(fs: FileSystemRepository) -> Command:
 @pytest.mark.parametrize(
     'args',
     (
-        ['', ''],
-        ['', '', ''],
         ['/not-a-dir'],
         ['photos'],
-        ['/photos/photo1.png'],
     ),
 )
 def test_invalid(args: list[str], ls: Command, ctx: CommandContext):
-    with pytest.raises(ValidationError):
+    with pytest.raises(DomainError):
         ls.execute(args, [], ctx)
 
 

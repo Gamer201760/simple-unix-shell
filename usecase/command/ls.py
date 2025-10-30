@@ -2,6 +2,7 @@ import stat
 from datetime import datetime
 
 from entity.context import CommandContext
+from entity.errors import DomainError
 from usecase.interface import FileSystemRepository
 
 
@@ -26,6 +27,8 @@ class Ls:
 
         for x in args:
             path = self._fs.normalize(x)
+            if not (self._fs.is_dir(path) or self._fs.is_file(path)):
+                raise DomainError(f'{path} не существует')
 
             if self._fs.is_dir(path):
                 for name in self._fs.list_dir(path):
@@ -38,7 +41,7 @@ class Ls:
             if self._fs.is_file(path):
                 lines.append(self._format_entry(path, long))
                 continue
-        if lines[-1] == '':
+        if len(lines) > 0 and lines[-1] == '':
             lines.pop()
 
         return '\n'.join(lines)
