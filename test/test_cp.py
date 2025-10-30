@@ -35,7 +35,6 @@ def cp(fs: FileSystemRepository) -> Command:
     return Cp(fs)
 
 
-# Копирование директории в несуществующий путь
 def test_cp_r_dir_to_new_path_creates_root(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
@@ -54,7 +53,6 @@ def test_cp_r_dir_to_new_path_creates_root(
     assert fs.read('/backup/Azamat.jpg') == 'SRC3'
 
 
-# Копирование директории в существующую директорию
 def test_cp_r_dir_into_existing_dir_places_inside(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
@@ -65,7 +63,6 @@ def test_cp_r_dir_into_existing_dir_places_inside(
     assert fs.is_file('/home/photos/Azamat.jpg')
 
 
-# Копирование директории без -r должно быть ошибкой
 def test_cp_dir_without_r_is_error(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
@@ -73,7 +70,6 @@ def test_cp_dir_without_r_is_error(
         cp.execute(['/photos', '/home/new_photos'], [], ctx)
 
 
-# Нельзя перезаписать существующий файл директорией
 def test_cp_r_dir_over_file_is_error(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
@@ -88,7 +84,6 @@ def test_cp_r_dir_over_file_is_error(
         cp.execute(['/home', '/photos/my.png'], ['-r'], ctx)
 
 
-# Перезапись файлов внутри существующей директории с undo
 def test_cp_r_overwrite_with_undo_records(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
@@ -136,7 +131,6 @@ def test_cp_r_conflict_file_vs_dir_in_tree(
         cp.execute(['/src/*', '/dst'], ['-r'], ctx)
 
 
-# несколько директорий только в существующую директорию
 def test_cp_r_multiple_sources_into_existing_dir(
     cp: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
@@ -144,11 +138,9 @@ def test_cp_r_multiple_sources_into_existing_dir(
         fs.mkdir('/mnt')
 
     cp.execute(['/etc', '/photos', '/mnt'], ['-r'], ctx)
-    # обе директории должны оказаться в /mnt
     assert fs.is_dir('/mnt/etc')
     assert fs.is_dir('/mnt/photos')
     assert fs.is_file('/mnt/photos/photo1.png')
 
-    # если dst не директория это ошибка
     with pytest.raises(ValidationError):
         cp.execute(['/etc', '/photos', '/mnt/new_place'], ['-r'], ctx)

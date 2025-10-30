@@ -4,6 +4,10 @@ from entity.undo import UndoRecord
 
 
 class FileSystemRepository(Protocol):
+    def normalize(self, path: str) -> str:
+        """Делает абсолютный путь"""
+        raise NotImplementedError
+
     def walk(self, path: str) -> Iterator[tuple[str, list[str], list[str]]]:
         """
         Возвращает список всех файлов и директорий,

@@ -21,7 +21,7 @@ class InMemoryFileSystemRepository:
 
     def walk(self, path: str) -> Iterator[tuple[str, list[str], list[str]]]:
         """Итеративный обход директории, аналогичный os.walk (top-down)."""
-        path = self._normalize_path(path)
+        path = self.normalize(path)
         if not self.is_dir(path):
             raise FileNotFoundError(f'Directory {path} not found')
 
@@ -50,7 +50,7 @@ class InMemoryFileSystemRepository:
             yield root, dirnames, filenames
 
     def mkdir(self, path: str) -> None:
-        norm = self._normalize_path(path)
+        norm = self.normalize(path)
         if norm in self._tree:
             raise FileExistsError(f'Directory {norm} already exists')
         self._tree[norm] = []
@@ -61,13 +61,13 @@ class InMemoryFileSystemRepository:
             self._tree[parent].append(name)
 
     def read(self, path: str) -> str:
-        norm = self._normalize_path(path)
+        norm = self.normalize(path)
         if not self.is_file(norm):
             raise FileNotFoundError(f'File {norm} not found')
         return self._files.get(norm, '')
 
     def write(self, path: str, data: str) -> None:
-        norm = self._normalize_path(path)
+        norm = self.normalize(path)
         parent, name = norm.rsplit('/', 1)
         if not parent:
             parent = '/'
@@ -78,11 +78,11 @@ class InMemoryFileSystemRepository:
         self._files[norm] = data
 
     def basename(self, path: str) -> str:
-        norm = self._normalize_path(path)
+        norm = self.normalize(path)
         return norm.rstrip('/').split('/')[-1]
 
     def stat(self, path: str) -> dict:
-        norm = self._normalize_path(path)
+        norm = self.normalize(path)
         if self.is_dir(norm):
             return {'type': 'dir', 'items': len(self._tree[norm])}
         if self.is_file(norm):
@@ -90,15 +90,15 @@ class InMemoryFileSystemRepository:
         raise FileNotFoundError(f'Path {norm} not found')
 
     def copy(self, source: str, dest: str) -> None:
-        src = self._normalize_path(source)
-        dst = self._normalize_path(dest)
+        src = self.normalize(source)
+        dst = self.normalize(dest)
         if self.is_file(src):
             self.write(dst, self.read(src))
         else:
             raise FileNotFoundError(f'Source file {source} not found')
 
     def delete(self, path: str) -> str:
-        src_path = self._normalize_path(path)
+        src_path = self.normalize(path)
         parent, name = src_path.rsplit('/', 1)
         if not parent:
             parent = '/'
@@ -124,8 +124,8 @@ class InMemoryFileSystemRepository:
         return trash_path
 
     def move(self, source: str, dest: str) -> None:
-        src_path = self._normalize_path(source)
-        dst_path = self._normalize_path(dest)
+        src_path = self.normalize(source)
+        dst_path = self.normalize(dest)
 
         src_dir, src_name = src_path.rsplit('/', 1)
         if not src_dir:
@@ -159,7 +159,7 @@ class InMemoryFileSystemRepository:
             self._tree[dst_full] = self._tree.pop(src_full)
 
     def is_file(self, path: str) -> bool:
-        norm = self._normalize_path(path)
+        norm = self.normalize(path)
         parent, name = norm.rsplit('/', 1)
         if not parent:
             parent = '/'
@@ -170,20 +170,20 @@ class InMemoryFileSystemRepository:
         )
 
     def list_dir(self, path: str) -> list[str]:
-        return self._tree[self._normalize_path(path)]
+        return self._tree[self.normalize(path)]
 
     def is_dir(self, path: str) -> bool:
-        return self._normalize_path(path) in self._tree
+        return self.normalize(path) in self._tree
 
     def set_current(self, path: str) -> None:
-        self._pwd = self._normalize_path(path)
+        self._pwd = self.normalize(path)
 
     def expanduser(self, path: str) -> str:
         if path.startswith('~'):
             return self._home + path[1:]
         return path
 
-    def _normalize_path(self, path: str) -> str:
+    def normalize(self, path: str) -> str:
         path = self.expanduser(path)
         if not path.startswith('/'):
             cur = self._pwd.rstrip('/')
