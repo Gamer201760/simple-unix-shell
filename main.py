@@ -4,6 +4,7 @@ from entity.context import CommandContext
 from repository.in_memory_fs import InMemoryFileSystemRepository
 from repository.in_memory_history_repo import InMemoryHistory
 from repository.in_memory_undo_repo import InMemoryUndoRepository
+from usecase.command.cat import Cat
 from usecase.command.cd import Cd
 from usecase.command.cp import Cp
 from usecase.command.history import History
@@ -38,6 +39,7 @@ def main() -> None:
         Mv(fs_repo),
         Cp(fs_repo),
         Rm(fs_repo),
+        Cat(fs_repo),
         Undo(undo_repo, fs_repo),
         History(history),
     ]
