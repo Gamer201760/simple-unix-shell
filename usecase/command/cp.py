@@ -103,6 +103,7 @@ class Cp:
         self._undo_records.clear()
         self._validate_args(args)
         *srcs, dst = args
+        dst = self._fs.normalize(dst)
 
         if len(srcs) > 1 and not self._fs.is_dir(dst):
             raise ValidationError(
@@ -111,7 +112,8 @@ class Cp:
 
         recursive = self._is_recursive(flags)
 
-        for raw_src in srcs:
+        for x in srcs:
+            raw_src = self._fs.normalize(x)
             content_mode, src = self._is_dir_content_path(raw_src)
             is_src_file = self._fs.is_file(src)
             is_src_dir = self._fs.is_dir(src)

@@ -32,7 +32,9 @@ class Mv:
         self._undo_records.clear()
         self._validate_args(args)
         *srcs, dst = args
-        for src in srcs:
+        dst = self._fs.normalize(dst)
+        for x in srcs:
+            src = self._fs.normalize(x)
             if not (self._fs.is_file(src) or self._fs.is_dir(src)):
                 raise ValidationError(f'Источник не найден: {src}')
 

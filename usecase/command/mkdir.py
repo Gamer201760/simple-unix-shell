@@ -77,20 +77,17 @@ class Mkdir:
         allow_parents = self._with_parents(flags)
         total_created = 0
 
-        for path in args:
-            # Создаём родителей при -p
+        for x in args:
+            path = self._fs.normalize(x)
             created_parents = self._make_parents_if_needed(path, allow_parents)
             self._record_created_dirs(created_parents)
             total_created += len(created_parents)
 
             if self._fs.is_dir(path):
-                # mkdir -p не должен падать, без -p - ошибка
                 if not allow_parents:
                     raise ValidationError(f'Директория уже существует: {path}')
-                # -p и уже существует -> ничего не делаем и не пишем undo
                 continue
 
-            # Создаём саму директорию
             self._fs.mkdir(path)
             self._record_created_dirs([path])
             total_created += 1

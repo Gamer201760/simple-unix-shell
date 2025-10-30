@@ -64,7 +64,8 @@ class Rm:
         self._validate_args(args)
         recursive = self._is_recursive(flags)
 
-        for src in args:
+        for x in args:
+            src = self._fs.normalize(x)
             is_file = self._fs.is_file(src)
             is_dir = self._fs.is_dir(src)
 
