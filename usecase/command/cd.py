@@ -9,23 +9,19 @@ class Cd:
 
     @property
     def name(self) -> str:
-        """Имя команды"""
         return 'cd'
 
     @property
     def description(self) -> str:
-        """Описание команды"""
         return 'Меняет директорию, cd <path>'
 
     def _validate_args(self, args: list[str]) -> None:
-        """Валидация аргументов, выбрасывает DomainError при ошибке"""
         if len(args) > 1:
             raise ValidationError(
                 'Команада cd принимает ровно один аргумент, воспользуйтесь cd -h'
             )
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
-        """Выполнение команды, выбрасывает DomainError при ошибке"""
         self._validate_args(args)
 
         if len(args) == 0:
@@ -35,5 +31,5 @@ class Cd:
             raise ValidationError(f'Это не директория {args[0]}')
 
         self._fs.set_current(args[0])
-        ctx.pwd = self._fs.current  # мб вынести в shell ?
+        ctx.pwd = self._fs.current
         return ''
