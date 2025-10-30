@@ -84,9 +84,20 @@ class InMemoryFileSystemRepository:
     def stat(self, path: str) -> dict:
         norm = self.normalize(path)
         if self.is_dir(norm):
-            return {'type': 'dir', 'items': len(self._tree[norm])}
+            return {
+                'type': 'dir',
+                'items': len(self._tree[norm]),
+                'mode': 0o100644,
+                'size': 123,
+                'mtime': 1735732440,
+            }
         if self.is_file(norm):
-            return {'type': 'file', 'size': len(self._files.get(norm, ''))}
+            return {
+                'type': 'file',
+                'size': len(self._files.get(norm, '')),
+                'mode': 0o100644,
+                'mtime': 1735732440,
+            }
         raise FileNotFoundError(f'Path {norm} not found')
 
     def copy(self, source: str, dest: str) -> None:
