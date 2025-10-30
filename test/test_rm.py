@@ -1,3 +1,4 @@
+import builtins
 from copy import deepcopy
 
 import pytest
@@ -39,7 +40,7 @@ def test_rm_file_deletes_and_moves_to_trash(
     rm: Command, fs: FileSystemRepository, ctx: CommandContext
 ):
     assert fs.is_file('/photos/photo1.png')
-    rm.execute(['/photos/photo1.png'], [], ctx)
+    rm.execute(['/photos/photo1.png'], ['-y'], ctx)
     assert not fs.is_file('/photos/photo1.png')
     assert '/.trash' in fs._tree
     assert any(name.startswith('photo1.png.') for name in fs._tree['/.trash'])
@@ -51,8 +52,14 @@ def test_rm_file_deletes_and_moves_to_trash(
 
 
 def test_rm_dir_without_r_is_error(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext
+    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
 ):
+    # Гарантируем, что input не вызывается при отсутствии -r
+    def fail_input(*a, **k):
+        raise AssertionError('input() must not be called without -r')
+
+    monkeypatch.setattr(builtins, 'input', fail_input)
+
     with pytest.raises(ValidationError):
         rm.execute(['/photos'], [], ctx)
 
@@ -72,7 +79,7 @@ def test_rm_r_dir_deletes_recursively(
     assert fs.is_dir('/photos/album')
     assert fs.is_file('/photos/album/p1.jpg')
 
-    rm.execute(['/photos'], ['-r'], ctx)
+    rm.execute(['/photos'], ['-r', '-y'], ctx)
     assert not fs.is_dir('/photos')
     undo = getattr(rm, 'undo')()
     assert len(undo) >= 4
@@ -82,7 +89,7 @@ def test_rm_r_dir_deletes_recursively(
 def test_rm_multiple_files(rm: Command, fs: FileSystemRepository, ctx: CommandContext):
     assert fs.is_file('/photos/photo1.png')
     assert fs.is_file('/photos/my.png')
-    rm.execute(['/photos/photo1.png', '/photos/my.png'], [], ctx)
+    rm.execute(['/photos/photo1.png', '/photos/my.png'], ['-y'], ctx)
     assert not fs.is_file('/photos/photo1.png')
     assert not fs.is_file('/photos/my.png')
     undo = getattr(rm, 'undo')()
@@ -92,16 +99,22 @@ def test_rm_multiple_files(rm: Command, fs: FileSystemRepository, ctx: CommandCo
 
 
 def test_rm_r_mixed_file_and_dir(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext
+    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
 ):
     if not fs.is_dir('/etc/conf'):
         fs.mkdir('/etc/conf')
     fs.write('/etc/conf/app.ini', 'CFG')
 
+    # Без -r должно упасть до интерактива
+    def fail_input(*a, **k):
+        raise AssertionError('input() must not be called before -r validation')
+
+    monkeypatch.setattr(builtins, 'input', fail_input)
+
     with pytest.raises(ValidationError):
         rm.execute(['/etc/conf', '/photos/my.png'], [], ctx)
 
-    rm.execute(['/etc/conf', '/photos/my.png'], ['-r'], ctx)
+    rm.execute(['/etc/conf', '/photos/my.png'], ['-r', '-y'], ctx)
     assert not fs.is_dir('/etc/conf')
     assert not fs.is_file('/photos/my.png')
     undo = getattr(rm, 'undo')()
@@ -110,7 +123,32 @@ def test_rm_r_mixed_file_and_dir(
 
 
 def test_rm_nonexistent_path_is_error(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext
+    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
 ):
+    # На несуществующий путь input тоже не должен вызываться
+    def fail_input(*a, **k):
+        raise AssertionError('input() must not be called for nonexistent path')
+
+    monkeypatch.setattr(builtins, 'input', fail_input)
+
     with pytest.raises(ValidationError):
         rm.execute(['/no/such/file'], [], ctx)
+
+
+def test_rm_prompts_and_respects_answer(
+    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
+):
+    # 1) Ответ "n" — пропуск удаления
+    fs.write('/etc/hosts', 'H')
+    monkeypatch.setattr(builtins, 'input', lambda *_: 'n')
+    msg = rm.execute(['/etc/hosts'], [], ctx)
+    assert msg.endswith('0 объектов')
+    assert fs.is_file('/etc/hosts')
+
+    # 2) Ответ "да" — удаление
+    monkeypatch.setattr(builtins, 'input', lambda *_: 'да')
+    msg = rm.execute(['/etc/hosts'], [], ctx)
+    assert msg.endswith('1 объектов')
+    assert not fs.is_file('/etc/hosts')
+    undo = getattr(rm, 'undo')()
+    assert len(undo) == 1

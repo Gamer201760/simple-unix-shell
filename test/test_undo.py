@@ -151,7 +151,7 @@ def test_undo_rm_file_restore(
     ctx: CommandContext,
 ) -> None:
     assert fs.is_file('/photos/my.png')
-    rm.execute(['/photos/my.png'], [], ctx)
+    rm.execute(['/photos/my.png'], ['-y'], ctx)
     undo_repo.add(rm.undo())
     assert not fs.is_file('/photos/my.png')
     undo.execute([], [], ctx)
@@ -170,7 +170,7 @@ def test_undo_rm_r_dir_restore_tree(
     fs.write('/photos/album/p1.jpg', 'X')
     fs.write('/photos/album/p2.jpg', 'Y')
     assert fs.is_dir('/photos')
-    rm.execute(['/photos'], ['-r'], ctx)
+    rm.execute(['/photos'], ['-r', '-y'], ctx)
     undo_repo.add(rm.undo())
     assert not fs.is_dir('/photos')
     undo.execute([], [], ctx)
@@ -191,7 +191,7 @@ def test_undo_rm_multiple_files_restore(
 ) -> None:
     assert fs.is_file('/photos/photo1.png')
     assert fs.is_file('/photos/Azamat.jpg')
-    rm.execute(['/photos/photo1.png', '/photos/Azamat.jpg'], [], ctx)
+    rm.execute(['/photos/photo1.png', '/photos/Azamat.jpg'], ['-y'], ctx)
     undo_repo.add(rm.undo())
     assert not fs.is_file('/photos/photo1.png')
     assert not fs.is_file('/photos/Azamat.jpg')
@@ -212,7 +212,7 @@ def test_undo_rm_mixed_dir_and_file_restore(
     fs.write('/etc/conf/app.ini', 'CFG')
     with pytest.raises(ValidationError):
         rm.execute(['/etc/conf', '/photos/my.png'], [], ctx)
-    rm.execute(['/etc/conf', '/photos/my.png'], ['-r'], ctx)
+    rm.execute(['/etc/conf', '/photos/my.png'], ['-r', '-y'], ctx)
     undo_repo.add(rm.undo())
     assert not fs.is_dir('/etc/conf')
     assert not fs.is_file('/photos/my.png')
@@ -237,7 +237,7 @@ def test_rm_r_undo_returns_apply_ready_order(
     fs.write('/tmpdata/a/f2', '2')
     fs.write('/tmpdata/a/b/f3', '3')
 
-    rm.execute(['/tmpdata'], ['-r'], ctx)
+    rm.execute(['/tmpdata'], ['-r', '-y'], ctx)
     records = rm.undo()
 
     dirs = [r for r in records if fs.is_dir(r.dst)]

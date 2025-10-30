@@ -59,10 +59,15 @@ class Rm:
 
         self._rm_file(path)
 
+    def _confirm(self, src: str) -> bool:
+        ans = input(f'Удалить {src}? [y/N]: ').strip().lower()
+        return ans in ('y', 'yes', 'д', 'да')
+
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._undo_records.clear()
         self._validate_args(args)
         recursive = self._is_recursive(flags)
+        yes = '-y' in flags
 
         for x in args:
             src = self._fs.normalize(x)
@@ -72,13 +77,15 @@ class Rm:
             if not is_file and not is_dir:
                 raise ValidationError(f'Путь не существует: {src}')
 
-            if is_file:
-                self._rm_file(src)
+            if is_dir and not recursive:
+                raise ValidationError('Для удаления директории нужен флаг -р')
+
+            if not (yes or self._confirm(src)):
                 continue
 
-            if not recursive:
-                raise ValidationError('Для удаления директории нужен флаг -r')
-
-            self._rm_dir(src)
+            if is_file:
+                self._rm_file(src)
+            else:
+                self._rm_dir(src)
 
         return f'rm: удалено {len(self._undo_records)} объектов'
