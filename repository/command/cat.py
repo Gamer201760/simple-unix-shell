@@ -1,8 +1,6 @@
-import os
-from pathlib import Path
-
 from entity.context import CommandContext
 from entity.errors import DomainError, ValidationError
+from repository.command.path_utils import normalize
 
 
 class Cat:
@@ -18,20 +16,16 @@ class Cat:
         if len(args) < 1:
             raise ValidationError('cat требует как минимум один аргумента: cat -h')
 
-    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
-        expanded = os.path.expanduser(raw)
-        p = Path(expanded)
-        if not p.is_absolute():
-            p = Path(ctx.pwd) / p
-        return p.resolve(strict=False)
-
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._validate_args(args)
 
         parts: list[str] = []
         for x in args:
-            src = self._normalize(x, ctx)
+            src = normalize(x, ctx)
             if not src.is_file():
                 raise DomainError(f'{src} не файл')
-            parts.append(src.read_text(encoding='utf-8'))
+            try:
+                parts.append(src.read_text(encoding='utf-8'))
+            except UnicodeDecodeError:
+                raise DomainError(f'{src} файл не в кодировке utf-8')
         return '\n'.join(parts) + '\n'
