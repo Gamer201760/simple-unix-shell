@@ -29,6 +29,19 @@ class Rm:
         if len(args) < 1:
             raise ValidationError('rm требует как минимум один аргумент, см: rm -h')
 
+    def _protect(self, target: Path, ctx: CommandContext) -> None:
+        # Запрет удаления корня /
+        root = Path(target.anchor or '/').resolve(strict=False)
+        if target.resolve(strict=False) == root:
+            raise ValidationError(f'Нельзя удалять корневой каталог: {target}')
+
+        # Запрет удаления родителя текущего каталога
+        cwd_parent = Path(ctx.pwd).resolve(strict=False).parent
+        if target.resolve(strict=False) == cwd_parent:
+            raise ValidationError(
+                f'Нельзя удалять родительский каталог текущего: {target}'
+            )
+
     def _is_recursive(self, flags: list[str]) -> bool:
         return ('-r' in flags) or ('-R' in flags) or ('--recursive' in flags)
 
@@ -88,6 +101,7 @@ class Rm:
 
         for x in args:
             src = normalize(x, ctx)
+            self._protect(src, ctx)
             is_file = src.is_file()
             is_dir = src.is_dir()
 

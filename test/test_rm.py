@@ -69,6 +69,14 @@ def test_rm_multiple_files(rm: Command, fs, ctx: CommandContext):
     assert any(d.startswith('/.trash/my.png.') for d in dsts)
 
 
+def test_rm_protect(rm: Command, fs, ctx: CommandContext):
+    setup_tree(fs, ctx)
+    with pytest.raises(ValidationError):
+        rm.execute(['/'], ['-y'], ctx)
+    with pytest.raises(ValidationError):
+        rm.execute(['..'], ['-y'], ctx)
+
+
 def test_rm_r_mixed_file_and_dir(rm: Command, fs, ctx: CommandContext, monkeypatch):
     setup_tree(fs, ctx)
     fs.create_dir('/vfs/etc/conf')
