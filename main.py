@@ -1,4 +1,5 @@
 import getpass
+import logging
 import os
 from pathlib import Path
 
@@ -16,7 +17,9 @@ from repository.command.mkdir import Mkdir
 from repository.command.mv import Mv
 from repository.command.pwd import Pwd
 from repository.command.rm import Rm
+from repository.command.tar import Tar
 from repository.command.undo import Undo
+from repository.command.untar import Untar
 from repository.command.unzip import Unzip
 from repository.command.whoami import WhoAmI
 from repository.command.zip import Zip
@@ -25,6 +28,15 @@ from repository.in_memory_undo_repo import InMemoryUndoRepository
 from usecase.shell import Shell
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+logging.basicConfig(
+    filename='shell.log',
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    encoding='utf-8',
+)
 
 
 def main() -> None:
@@ -42,6 +54,8 @@ def main() -> None:
         Mkdir(),
         Zip(),
         Unzip(),
+        Tar(),
+        Untar(),
         Rm(trash_dir),
         Cat(),
         Grep(),

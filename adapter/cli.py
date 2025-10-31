@@ -1,5 +1,9 @@
-from entity.errors import DomainError
+from logging import getLogger
+
+from entity.errors import DomainError, ValidationError
 from usecase.shell import Shell
+
+logger = getLogger(__name__)
 
 
 class CLIAdapter:
@@ -22,15 +26,22 @@ class CLIAdapter:
                         flags.append(arg)
                     else:
                         args.append(arg)
+                logger.info(line)
                 res = self.shell.run(name, args, flags)
                 if res != '':
                     print(res)
-
             except EOFError:
                 print('\nЗавершение shell')
                 break
+            except ValidationError as e:
+                logger.warning(e)
+                print(e)
             except DomainError as e:
+                logger.error(e)
                 print(e)
             except KeyboardInterrupt:
                 print('\nShell завершён по Ctrl-C. Лучше через Ctrl-D')
+                break
+            except Exception as e:
+                logger.critical(e, exc_info=e)
                 break
