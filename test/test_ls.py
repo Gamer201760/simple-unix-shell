@@ -1,46 +1,41 @@
+# tests/test_ls.py
+
 import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import DomainError
-from repository.in_memory_fs import InMemoryFileSystemRepository
-from usecase.command.ls import Ls
-from usecase.interface import FileSystemRepository
-
-UNIX_TREE = {
-    '/': ['home', 'etc', 'photos'],
-    '/home': ['test', 'test2'],
-    '/home/test': ['etc'],
-    '/home/test/etc': [],
-    '/home/test2': [],
-    '/etc': [],
-    '/photos': ['photo1.png', 'my.png', 'Azamat.jpg'],
-}
 
 
-@pytest.fixture
-def ctx() -> CommandContext:
-    return CommandContext(pwd='/home/test', home='/home/test', user='test')
+def _setup_tree_for_ls(fs, ctx: CommandContext):
+    ctx.pwd = '/vfs/home/test'
+    ctx.home = '/vfs/home/test'
+    ctx.user = 'test'
 
+    fs.create_dir('/vfs')
+    fs.create_dir('/vfs/home')
+    fs.create_dir('/vfs/etc')
+    fs.create_dir('/vfs/photos')
 
-@pytest.fixture
-def fs(ctx: CommandContext) -> FileSystemRepository:
-    return InMemoryFileSystemRepository(UNIX_TREE)
+    fs.create_dir('/vfs/home/test')
+    fs.create_dir('/vfs/home/test2')
 
+    fs.create_dir('/vfs/home/test/etc')
 
-@pytest.fixture
-def ls(fs: FileSystemRepository) -> Command:
-    return Ls(fs)
+    fs.create_file('/vfs/photos/photo1.png')
+    fs.create_file('/vfs/photos/my.png')
+    fs.create_file('/vfs/photos/Azamat.jpg')
 
 
 @pytest.mark.parametrize(
     'args',
     (
-        ['/not-a-dir'],
+        ['/vfs/not-a-dir'],
         ['photos'],
     ),
 )
-def test_invalid(args: list[str], ls: Command, ctx: CommandContext):
+def test_invalid(args: list[str], ls: Command, fs, ctx: CommandContext):
+    _setup_tree_for_ls(fs, ctx)
     with pytest.raises(DomainError):
         ls.execute(args, [], ctx)
 
@@ -56,14 +51,14 @@ def test_invalid(args: list[str], ls: Command, ctx: CommandContext):
         ['../../.'],
         ['../.'],
         ['~'],
-        ['/'],
-        ['/home/test2/..'],
-        ['/../../'],
+        ['/vfs'],
+        ['/vfs/home/test2/..'],
         ['etc'],
         ['etc/../..'],
     ),
 )
-def test_valid(args: list[str], ls: Command, ctx: CommandContext):
+def test_valid(args: list[str], ls: Command, fs, ctx: CommandContext):
+    _setup_tree_for_ls(fs, ctx)
     ls.execute(args, [], ctx)
 
 
@@ -71,8 +66,8 @@ def test_valid(args: list[str], ls: Command, ctx: CommandContext):
     'args,expected',
     [
         (['~'], 'etc'),
-        (['/home/test2'], ''),
-        (['/home/..'], 'home\netc\nphotos'),
+        (['/vfs/home/test2'], ''),
+        (['../..'], 'home\netc\nphotos'),
         (['etc'], ''),
         (['etc/..'], 'etc'),
         (['etc/../..'], 'test\ntest2'),
@@ -83,6 +78,8 @@ def test_execute(
     args: list[str],
     expected: str,
     ls: Command,
+    fs,
     ctx: CommandContext,
 ):
+    _setup_tree_for_ls(fs, ctx)
     assert ls.execute(args, [], ctx) == expected

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from entity.context import CommandContext
 from entity.errors import DomainError
+from repository.command.path_utils import normalize
 
 
 class Ls:
@@ -16,13 +17,6 @@ class Ls:
     def description(self) -> str:
         return 'Показывает объекты в директории, ls [-l] <path...>'
 
-    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
-        expanded = os.path.expanduser(raw)
-        p = Path(expanded)
-        if not p.is_absolute():
-            p = Path(ctx.pwd) / p
-        return p.resolve(strict=False)
-
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         if not args:
             args = ['.']
@@ -31,7 +25,7 @@ class Ls:
         lines: list[str] = []
 
         for x in args:
-            path = self._normalize(x, ctx)
+            path = normalize(x, ctx)
             if not (path.is_dir() or path.is_file()):
                 raise DomainError(f'{path} не существует')
 
