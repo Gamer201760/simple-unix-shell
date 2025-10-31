@@ -1,9 +1,9 @@
-import os
 from pathlib import Path
 
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from entity.undo import UndoRecord
+from repository.command.path_utils import normalize
 
 
 class Mkdir:
@@ -29,13 +29,6 @@ class Mkdir:
 
     def _with_parents(self, flags: list[str]) -> bool:
         return ('-p' in flags) or ('--parents' in flags)
-
-    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
-        expanded = os.path.expanduser(raw)
-        p = Path(expanded)
-        if not p.is_absolute():
-            p = Path(ctx.pwd) / p
-        return p.resolve(strict=False)
 
     def _make_parents_if_needed(self, path: Path, allow_parents: bool) -> list[str]:
         created: list[str] = []
@@ -84,16 +77,18 @@ class Mkdir:
         total_created = 0
 
         for x in args:
-            path = self._normalize(x, ctx)
+            path = normalize(x, ctx)
 
             created_parents = self._make_parents_if_needed(path, allow_parents)
             self._record_created_dirs(created_parents)
             total_created += len(created_parents)
 
-            if path.is_dir():
-                if not allow_parents:
-                    raise ValidationError(f'Директория уже существует: {path}')
-                continue
+            if path.exists():
+                if path.is_dir():
+                    if not allow_parents:
+                        raise ValidationError(f'Директория уже существует: {path}')
+                    continue
+                raise ValidationError(f'Путь уже существует и является файлом: {path}')
 
             path.mkdir()
             self._record_created_dirs([str(path)])

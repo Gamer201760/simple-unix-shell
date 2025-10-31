@@ -18,16 +18,14 @@ class Mv:
 
     @property
     def description(self) -> str:
-        return 'Перемещает файл или директорию, mv <source> <dest>'
+        return 'Перемещает файл или директорию, mv <source...> <dest>'
 
     def undo(self) -> list[UndoRecord]:
         return self._undo_records.copy()
 
     def _validate_args(self, args: list[str]) -> None:
         if len(args) < 2:
-            raise ValidationError(
-                'mv требует как минимум два аргумента: mv <source...> <dest>'
-            )
+            raise ValidationError('mv требует как минимум два аргумента: mv -h')
 
     def _backup_existing_file(self, path: Path) -> str:
         tmp_dir = Path(tempfile.mkdtemp(prefix='.mv_undo_'))

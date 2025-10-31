@@ -6,11 +6,13 @@ from pathlib import Path
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from entity.undo import UndoRecord
+from repository.command.path_utils import normalize
 
 
 class Rm:
-    def __init__(self) -> None:
+    def __init__(self, trash_dir: str) -> None:
         self._undo_records: list[UndoRecord] = []
+        self._trash_dir = trash_dir
 
     @property
     def name(self) -> str:
@@ -30,15 +32,8 @@ class Rm:
     def _is_recursive(self, flags: list[str]) -> bool:
         return ('-r' in flags) or ('-R' in flags) or ('--recursive' in flags)
 
-    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
-        expanded = os.path.expanduser(raw)
-        p = Path(expanded)
-        if not p.is_absolute():
-            p = Path(ctx.pwd) / p
-        return p.resolve(strict=False)
-
     def _ensure_trash(self, ctx: CommandContext) -> Path:
-        trash = Path(ctx.pwd) / '.trash'
+        trash = Path(self._trash_dir)
         trash.mkdir(parents=True, exist_ok=True)
         return trash
 
@@ -92,7 +87,7 @@ class Rm:
         trash_root = self._ensure_trash(ctx)
 
         for x in args:
-            src = self._normalize(x, ctx)
+            src = normalize(x, ctx)
             is_file = src.is_file()
             is_dir = src.is_dir()
 

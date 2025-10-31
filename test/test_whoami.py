@@ -2,12 +2,6 @@ import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
-from usecase.command.whoami import WhoAmI
-
-
-@pytest.fixture
-def whoami() -> Command:
-    return WhoAmI()
 
 
 @pytest.mark.parametrize(

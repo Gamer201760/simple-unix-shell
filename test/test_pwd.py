@@ -2,12 +2,6 @@ import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
-from usecase.command.pwd import Pwd
-
-
-@pytest.fixture
-def pwd() -> Command:
-    return Pwd()
 
 
 @pytest.mark.parametrize(

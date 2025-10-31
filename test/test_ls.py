@@ -1,30 +1,9 @@
-# tests/test_ls.py
-
 import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import DomainError
-
-
-def _setup_tree_for_ls(fs, ctx: CommandContext):
-    ctx.pwd = '/vfs/home/test'
-    ctx.home = '/vfs/home/test'
-    ctx.user = 'test'
-
-    fs.create_dir('/vfs')
-    fs.create_dir('/vfs/home')
-    fs.create_dir('/vfs/etc')
-    fs.create_dir('/vfs/photos')
-
-    fs.create_dir('/vfs/home/test')
-    fs.create_dir('/vfs/home/test2')
-
-    fs.create_dir('/vfs/home/test/etc')
-
-    fs.create_file('/vfs/photos/photo1.png')
-    fs.create_file('/vfs/photos/my.png')
-    fs.create_file('/vfs/photos/Azamat.jpg')
+from test.conftest import _setup_tree
 
 
 @pytest.mark.parametrize(
@@ -35,7 +14,7 @@ def _setup_tree_for_ls(fs, ctx: CommandContext):
     ),
 )
 def test_invalid(args: list[str], ls: Command, fs, ctx: CommandContext):
-    _setup_tree_for_ls(fs, ctx)
+    _setup_tree(fs, ctx)
     with pytest.raises(DomainError):
         ls.execute(args, [], ctx)
 
@@ -58,7 +37,7 @@ def test_invalid(args: list[str], ls: Command, fs, ctx: CommandContext):
     ),
 )
 def test_valid(args: list[str], ls: Command, fs, ctx: CommandContext):
-    _setup_tree_for_ls(fs, ctx)
+    _setup_tree(fs, ctx)
     ls.execute(args, [], ctx)
 
 
@@ -71,7 +50,7 @@ def test_valid(args: list[str], ls: Command, fs, ctx: CommandContext):
         (['etc'], ''),
         (['etc/..'], 'etc'),
         (['etc/../..'], 'test\ntest2'),
-        (['etc/../../../photos'], 'photo1.png\nmy.png\nAzamat.jpg'),
+        (['etc/../../../photos'], 'photo1.png\nmy.png\nAzamat.jpg\nnew photo.png'),
     ],
 )
 def test_execute(
@@ -81,5 +60,5 @@ def test_execute(
     fs,
     ctx: CommandContext,
 ):
-    _setup_tree_for_ls(fs, ctx)
+    _setup_tree(fs, ctx)
     assert ls.execute(args, [], ctx) == expected

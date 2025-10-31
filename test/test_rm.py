@@ -1,154 +1,121 @@
 import builtins
-from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
-from repository.in_memory_fs import InMemoryFileSystemRepository
-from usecase.command.rm import Rm
-from usecase.interface import FileSystemRepository
-
-UNIX_TREE = {
-    '/': ['home', 'etc', 'photos'],
-    '/home': ['test', 'test2'],
-    '/home/test': ['etc'],
-    '/home/test/etc': [],
-    '/home/test2': [],
-    '/etc': [],
-    '/photos': ['photo1.png', 'my.png', 'Azamat.jpg'],
-}
+from test.conftest import _setup_tree
 
 
-@pytest.fixture
-def ctx() -> CommandContext:
-    return CommandContext(pwd='/home/test', home='/home/test', user='test')
-
-
-@pytest.fixture
-def fs(ctx: CommandContext) -> FileSystemRepository:
-    return InMemoryFileSystemRepository(deepcopy(UNIX_TREE))
-
-
-@pytest.fixture
-def rm(fs: FileSystemRepository) -> Command:
-    return Rm(fs)
-
-
-def test_rm_file_deletes_and_moves_to_trash(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext
-):
-    assert fs.is_file('/photos/photo1.png')
-    rm.execute(['/photos/photo1.png'], ['-y'], ctx)
-    assert not fs.is_file('/photos/photo1.png')
-    assert '/.trash' in fs._tree
-    assert any(name.startswith('photo1.png.') for name in fs._tree['/.trash'])
+def test_rm_file_deletes_and_moves_to_trash(rm: Command, fs, ctx: CommandContext):
+    _setup_tree(fs, ctx)
+    assert Path('/vfs/photos/photo1.png').is_file()
+    rm.execute(['/vfs/photos/photo1.png'], ['-y'], ctx)
+    assert not Path('/vfs/photos/photo1.png').exists()
+    trash = Path('/.trash')
+    assert trash.is_dir()
+    trashed = [p.name for p in trash.iterdir()]
+    assert any(name.startswith('photo1.png.') for name in trashed)
     undo = getattr(rm, 'undo')()
     assert len(undo) == 1
     assert undo[0].action == 'rm'
-    assert undo[0].src == '/photos/photo1.png'
+    assert undo[0].src == '/vfs/photos/photo1.png'
     assert undo[0].dst.startswith('/.trash/')
 
 
-def test_rm_dir_without_r_is_error(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
-):
-    # Гарантируем, что input не вызывается при отсутствии -r
+def test_rm_dir_without_r_is_error(rm: Command, fs, ctx: CommandContext, monkeypatch):
+    _setup_tree(fs, ctx)
+
     def fail_input(*a, **k):
         raise AssertionError('input() must not be called without -r')
 
     monkeypatch.setattr(builtins, 'input', fail_input)
-
     with pytest.raises(ValidationError):
-        rm.execute(['/photos'], [], ctx)
+        rm.execute(['/vfs/photos'], [], ctx)
 
 
-def test_rm_r_dir_deletes_recursively(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext
-):
-    if not fs.is_dir('/photos/album'):
-        fs.mkdir('/photos/album')
-    fs.write('/photos/album/p1.jpg', 'X')
-    fs.write('/photos/album/p2.jpg', 'Y')
+def test_rm_r_dir_deletes_recursively(rm: Command, fs, ctx: CommandContext):
+    _setup_tree(fs, ctx)
+    fs.create_dir('/vfs/photos/album')
+    fs.create_file('/vfs/photos/album/p1.jpg', contents='X')
+    fs.create_file('/vfs/photos/album/p2.jpg', contents='Y')
 
-    assert fs.is_dir('/photos')
-    assert fs.is_file('/photos/photo1.png')
-    assert fs.is_file('/photos/my.png')
-    assert fs.is_file('/photos/Azamat.jpg')
-    assert fs.is_dir('/photos/album')
-    assert fs.is_file('/photos/album/p1.jpg')
+    assert Path('/vfs/photos').is_dir()
+    assert Path('/vfs/photos/photo1.png').is_file()
+    assert Path('/vfs/photos/my.png').is_file()
+    assert Path('/vfs/photos/Azamat.jpg').is_file()
+    assert Path('/vfs/photos/album').is_dir()
+    assert Path('/vfs/photos/album/p1.jpg').is_file()
 
-    rm.execute(['/photos'], ['-r', '-y'], ctx)
-    assert not fs.is_dir('/photos')
+    rm.execute(['/vfs/photos'], ['-r', '-y'], ctx)
+    assert not Path('/vfs/photos').exists()
     undo = getattr(rm, 'undo')()
     assert len(undo) >= 4
     assert all(u.action == 'rm' and u.dst.startswith('/.trash/') for u in undo)
 
 
-def test_rm_multiple_files(rm: Command, fs: FileSystemRepository, ctx: CommandContext):
-    assert fs.is_file('/photos/photo1.png')
-    assert fs.is_file('/photos/my.png')
-    rm.execute(['/photos/photo1.png', '/photos/my.png'], ['-y'], ctx)
-    assert not fs.is_file('/photos/photo1.png')
-    assert not fs.is_file('/photos/my.png')
+def test_rm_multiple_files(rm: Command, fs, ctx: CommandContext):
+    _setup_tree(fs, ctx)
+    assert Path('/vfs/photos/photo1.png').is_file()
+    assert Path('/vfs/photos/my.png').is_file()
+    rm.execute(['/vfs/photos/photo1.png', '/vfs/photos/my.png'], ['-y'], ctx)
+    assert not Path('/vfs/photos/photo1.png').exists()
+    assert not Path('/vfs/photos/my.png').exists()
     undo = getattr(rm, 'undo')()
     dsts = {u.dst for u in undo}
     assert any(d.startswith('/.trash/photo1.png.') for d in dsts)
     assert any(d.startswith('/.trash/my.png.') for d in dsts)
 
 
-def test_rm_r_mixed_file_and_dir(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
-):
-    if not fs.is_dir('/etc/conf'):
-        fs.mkdir('/etc/conf')
-    fs.write('/etc/conf/app.ini', 'CFG')
+def test_rm_r_mixed_file_and_dir(rm: Command, fs, ctx: CommandContext, monkeypatch):
+    _setup_tree(fs, ctx)
+    fs.create_dir('/vfs/etc/conf')
+    fs.create_file('/vfs/etc/conf/app.ini', contents='CFG')
 
-    # Без -r должно упасть до интерактива
     def fail_input(*a, **k):
         raise AssertionError('input() must not be called before -r validation')
 
     monkeypatch.setattr(builtins, 'input', fail_input)
-
     with pytest.raises(ValidationError):
-        rm.execute(['/etc/conf', '/photos/my.png'], [], ctx)
+        rm.execute(['/vfs/etc/conf', '/vfs/photos/my.png'], [], ctx)
 
-    rm.execute(['/etc/conf', '/photos/my.png'], ['-r', '-y'], ctx)
-    assert not fs.is_dir('/etc/conf')
-    assert not fs.is_file('/photos/my.png')
+    rm.execute(['/vfs/etc/conf', '/vfs/photos/my.png'], ['-r', '-y'], ctx)
+    assert not Path('/vfs/etc/conf').exists()
+    assert not Path('/vfs/photos/my.png').exists()
     undo = getattr(rm, 'undo')()
     assert len(undo) >= 2
     assert all(u.action == 'rm' for u in undo)
 
 
 def test_rm_nonexistent_path_is_error(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
+    rm: Command, fs, ctx: CommandContext, monkeypatch
 ):
-    # На несуществующий путь input тоже не должен вызываться
+    _setup_tree(fs, ctx)
+
     def fail_input(*a, **k):
         raise AssertionError('input() must not be called for nonexistent path')
 
     monkeypatch.setattr(builtins, 'input', fail_input)
-
     with pytest.raises(ValidationError):
         rm.execute(['/no/such/file'], [], ctx)
 
 
 def test_rm_prompts_and_respects_answer(
-    rm: Command, fs: FileSystemRepository, ctx: CommandContext, monkeypatch
+    rm: Command, fs, ctx: CommandContext, monkeypatch
 ):
-    # 1) Ответ "n" — пропуск удаления
-    fs.write('/etc/hosts', 'H')
-    monkeypatch.setattr(builtins, 'input', lambda *_: 'n')
-    msg = rm.execute(['/etc/hosts'], [], ctx)
-    assert msg.endswith('0 объектов')
-    assert fs.is_file('/etc/hosts')
+    _setup_tree(fs, ctx)
+    fs.create_file('/vfs/etc/hosts', contents='H')
 
-    # 2) Ответ "да" — удаление
+    monkeypatch.setattr(builtins, 'input', lambda *_: 'n')
+    msg = rm.execute(['/vfs/etc/hosts'], [], ctx)
+    assert msg.endswith('0 объектов')
+    assert Path('/vfs/etc/hosts').is_file()
+
     monkeypatch.setattr(builtins, 'input', lambda *_: 'да')
-    msg = rm.execute(['/etc/hosts'], [], ctx)
+    msg = rm.execute(['/vfs/etc/hosts'], [], ctx)
     assert msg.endswith('1 объектов')
-    assert not fs.is_file('/etc/hosts')
+    assert not Path('/vfs/etc/hosts').exists()
     undo = getattr(rm, 'undo')()
     assert len(undo) == 1
