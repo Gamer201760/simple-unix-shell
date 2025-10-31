@@ -48,6 +48,7 @@ class Ls:
 
     def _format_entry(self, path: Path, long: bool) -> str:
         name = path.name
+        name += '/' if path.is_dir() else ''
         if not long:
             return name
 
