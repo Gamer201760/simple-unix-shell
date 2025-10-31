@@ -12,6 +12,8 @@ from repository.command.mkdir import Mkdir
 from repository.command.mv import Mv
 from repository.command.pwd import Pwd
 from repository.command.rm import Rm
+from repository.command.tar import Tar
+from repository.command.untar import Untar
 from repository.command.unzip import Unzip
 from repository.command.whoami import WhoAmI
 from repository.command.zip import Zip
@@ -96,3 +98,13 @@ def zip() -> Zip:
 @pytest.fixture
 def unzip() -> Unzip:
     return Unzip()
+
+
+@pytest.fixture
+def tar() -> Tar:
+    return Tar()
+
+
+@pytest.fixture
+def untar() -> Untar:
+    return Untar()

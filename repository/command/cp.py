@@ -98,8 +98,8 @@ class Cp:
             target_dir = root_dst if rel == '.' else root_dst / rel
             self._mkdir_if_not_exists(target_dir)
 
-            for d in dirs:
-                self._mkdir_if_not_exists(target_dir / d)
+            for dir in dirs:
+                self._mkdir_if_not_exists(target_dir / dir)
 
             for fname in files:
                 s = cur_root_path / fname
