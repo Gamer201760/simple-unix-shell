@@ -36,7 +36,7 @@ class CLIAdapter:
                 break
             except PermissionError as e:
                 logger.error(e)
-                print('Не достаточно прав')
+                print('Недостаточно прав')
             except ValidationError as e:
                 logger.warning(e)
                 print(e)
