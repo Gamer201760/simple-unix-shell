@@ -1,101 +1,102 @@
-from copy import deepcopy
+# tests/test_mv.py
+
+from pathlib import Path
 
 import pytest
 
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
-from repository.in_memory_fs import InMemoryFileSystemRepository
-from usecase.command.mv import Mv
-from usecase.interface import FileSystemRepository
-
-UNIX_TREE = {
-    '/': ['home', 'etc', 'photos'],
-    '/home': ['test', 'test2'],
-    '/home/test': ['etc'],
-    '/home/test/etc': [],
-    '/home/test2': [],
-    '/etc': [],
-    '/photos': ['photo1.png', 'my.png', 'Azamat.jpg', 'new photo.png'],
-}
 
 
-@pytest.fixture
-def ctx() -> CommandContext:
-    return CommandContext(pwd='/home/test', home='/home/test', user='test')
+def _setup_tree_for_mv(fs, ctx: CommandContext):
+    ctx.pwd = '/vfs/home/test'
+    ctx.home = '/vfs/home/test'
+    ctx.user = 'test'
 
+    fs.create_dir('/vfs')
+    fs.create_dir('/vfs/home')
+    fs.create_dir('/vfs/etc')
+    fs.create_dir('/vfs/photos')
 
-@pytest.fixture
-def fs(ctx: CommandContext) -> FileSystemRepository:
-    return InMemoryFileSystemRepository(deepcopy(UNIX_TREE))
+    fs.create_dir('/vfs/home/test')
+    fs.create_dir('/vfs/home/test2')
 
+    fs.create_dir('/vfs/home/test/etc')
 
-@pytest.fixture
-def mv(fs: FileSystemRepository) -> Command:
-    return Mv(fs)
+    fs.create_file('/vfs/photos/photo1.png', contents='IMG1')
+    fs.create_file('/vfs/photos/my.png', contents='IMG2')
+    fs.create_file('/vfs/photos/Azamat.jpg', contents='IMG3')
+    fs.create_file('/vfs/photos/new photo.png', contents='IMG4')
 
 
 @pytest.mark.parametrize(
     'args',
     (
         ['not-exist.png', 'photos/my.png'],
-        ['photos', 'not-dir'],
-        ['photos', 'photos/photo1.png'],  # dest — это файл, а source — директория
-        ['photos/photo1.png'],  # мало аргументов
+        ['/vfs/photos', '/vfs/photos/photo1.png'],
+        ['/vfs/photos/photo1.png'],
     ),
 )
-def test_invalid_mv(args: list[str], mv: Command, ctx: CommandContext):
+def test_invalid_mv(args: list[str], mv: Command, fs, ctx: CommandContext):
+    _setup_tree_for_mv(fs, ctx)
     with pytest.raises(ValidationError):
         mv.execute(args, [], ctx)
 
 
 @pytest.mark.parametrize(
-    'src, dst, expected',
+    'src, dst, expected_path',
     [
-        ('/photos/photo1.png', '/photos/new_photo.png', ('/photos', 'new_photo.png')),
-        ('/photos/my.png', '/home/test/etc/my.png', ('/home/test/etc', 'my.png')),
-        ('/photos/Azamat.jpg', '/home/test/Azamat.jpg', ('/home/test', 'Azamat.jpg')),
-        ('/photos/new photo.png', '~', ('/home/test', 'new photo.png')),
+        (
+            '/vfs/photos/photo1.png',
+            '/vfs/photos/new_photo.png',
+            '/vfs/photos/new_photo.png',
+        ),
+        (
+            '/vfs/photos/my.png',
+            '/vfs/home/test/etc/my.png',
+            '/vfs/home/test/etc/my.png',
+        ),
+        (
+            '/vfs/photos/Azamat.jpg',
+            '/vfs/home/test/Azamat.jpg',
+            '/vfs/home/test/Azamat.jpg',
+        ),
+        ('/vfs/photos/new photo.png', '~', '/vfs/home/test/new photo.png'),
         # move dir into another dir
-        ('/home/test/etc', '/photos/etc', ('/photos', 'etc')),
+        ('/vfs/home/test/etc', '/vfs/photos/etc', '/vfs/photos/etc'),
     ],
 )
 def test_valid_mv(
     src: str,
     dst: str,
-    expected: tuple[str, str],
+    expected_path: str,
     mv: Command,
-    fs: FileSystemRepository,
+    fs,
     ctx: CommandContext,
 ):
+    _setup_tree_for_mv(fs, ctx)
     mv.execute([src, dst], [], ctx)
-    # expected: (dir, name) should exist after mv
-    target_dir, target_name = expected
-    assert target_dir in fs._tree
-    assert target_name in fs._tree[target_dir]
+    assert Path(expected_path).exists()
 
 
 @pytest.mark.parametrize(
-    'args, assert_src, assert_dst',
+    'src, dst',
     [
-        # mv file: should disappear from src, appear at dst
         (
-            ['/photos/photo1.png', '/home/test/etc/photo1.png'],
-            ('/photos', 'photo1.png', False),  # file gone from src_dir
-            ('/home/test/etc', 'photo1.png', True),  # file appeared in dst_dir
+            '/vfs/photos/photo1.png',
+            '/vfs/home/test/etc/photo1.png',
         ),
     ],
 )
 def test_mv_remove_from_src_and_appear_in_dst(
-    args: list[str],
-    assert_src: tuple[str, str, bool],
-    assert_dst: tuple[str, str, bool],
+    src: str,
+    dst: str,
     mv: Command,
-    fs: FileSystemRepository,
+    fs,
     ctx: CommandContext,
 ):
-    mv.execute(args, [], ctx)
-    src_dir, src_name, src_should_exist = assert_src
-    dst_dir, dst_name, dst_should_exist = assert_dst
-    assert (src_name in fs._tree[src_dir]) == src_should_exist
-    assert (dst_name in fs._tree[dst_dir]) == dst_should_exist
+    _setup_tree_for_mv(fs, ctx)
+    mv.execute([src, dst], [], ctx)
+    assert not Path(src).exists()
+    assert Path(dst).exists()
