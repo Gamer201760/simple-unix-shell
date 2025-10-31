@@ -9,6 +9,7 @@ from repository.command.cat import Cat
 from repository.command.cd import Cd
 from repository.command.cp import Cp
 from repository.command.exit import Exit
+from repository.command.grep import Grep
 from repository.command.history import History
 from repository.command.ls import Ls
 from repository.command.mkdir import Mkdir
@@ -43,6 +44,7 @@ def main() -> None:
         Unzip(),
         Rm(trash_dir),
         Cat(),
+        Grep(),
         Undo(undo_repo),
         History(history),
     ]

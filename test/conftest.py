@@ -7,6 +7,7 @@ from entity.context import CommandContext
 from repository.command.cat import Cat
 from repository.command.cd import Cd
 from repository.command.cp import Cp
+from repository.command.grep import Grep
 from repository.command.ls import Ls
 from repository.command.mkdir import Mkdir
 from repository.command.mv import Mv
@@ -108,3 +109,8 @@ def tar() -> Tar:
 @pytest.fixture
 def untar() -> Untar:
     return Untar()
+
+
+@pytest.fixture
+def grep() -> Grep:
+    return Grep()
