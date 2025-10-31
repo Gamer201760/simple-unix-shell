@@ -16,7 +16,9 @@ from repository.command.mv import Mv
 from repository.command.pwd import Pwd
 from repository.command.rm import Rm
 from repository.command.undo import Undo
+from repository.command.unzip import Unzip
 from repository.command.whoami import WhoAmI
+from repository.command.zip import Zip
 from repository.in_memory_history_repo import InMemoryHistory
 from repository.in_memory_undo_repo import InMemoryUndoRepository
 from usecase.shell import Shell
@@ -37,6 +39,8 @@ def main() -> None:
         Mv(),
         Cp(),
         Mkdir(),
+        Zip(),
+        Unzip(),
         Rm(trash_dir),
         Cat(),
         Undo(undo_repo),
