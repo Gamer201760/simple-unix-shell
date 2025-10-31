@@ -11,6 +11,7 @@ from repository.command.cp import Cp
 from repository.command.exit import Exit
 from repository.command.history import History
 from repository.command.ls import Ls
+from repository.command.mkdir import Mkdir
 from repository.command.mv import Mv
 from repository.command.pwd import Pwd
 from repository.command.rm import Rm
@@ -35,6 +36,7 @@ def main() -> None:
         Cd(),
         Mv(),
         Cp(),
+        Mkdir(),
         Rm(trash_dir),
         Cat(),
         Undo(undo_repo),

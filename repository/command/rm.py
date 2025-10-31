@@ -20,7 +20,7 @@ class Rm:
 
     @property
     def description(self) -> str:
-        return 'Удаляет файлы и директории (директории только с -r): rm [-r] <path...>'
+        return 'Удаляет файлы и директории (директории только с -r): rm [-r] [-y] <path...>'
 
     def undo(self) -> list[UndoRecord]:
         return self._undo_records.copy()[::-1]
@@ -95,7 +95,7 @@ class Rm:
                 raise ValidationError(f'Путь не существует: {src}')
 
             if is_dir and not recursive:
-                raise ValidationError('Для удаления директории нужен флаг -р')
+                raise ValidationError('Для удаления директории нужен флаг -r')
 
             if not (yes or self._confirm(src)):
                 continue
