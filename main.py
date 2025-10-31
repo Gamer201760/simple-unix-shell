@@ -8,6 +8,7 @@ from entity.context import CommandContext
 from repository.command.cat import Cat
 from repository.command.cd import Cd
 from repository.command.cp import Cp
+from repository.command.exit import Exit
 from repository.command.history import History
 from repository.command.ls import Ls
 from repository.command.mv import Mv
@@ -27,6 +28,7 @@ def main() -> None:
     history = InMemoryHistory()
     trash_dir = os.path.join(ROOT_DIR, '.trash')
     list_cmds: list[Command] = [
+        Exit(),
         Pwd(),
         WhoAmI(),
         Ls(),
