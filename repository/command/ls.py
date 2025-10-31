@@ -1,15 +1,13 @@
+import os
 import stat
 from datetime import datetime
+from pathlib import Path
 
 from entity.context import CommandContext
 from entity.errors import DomainError
-from usecase.interface import FileSystemRepository
 
 
 class Ls:
-    def __init__(self, fs: FileSystemRepository) -> None:
-        self._fs = fs
-
     @property
     def name(self) -> str:
         return 'ls'
@@ -17,6 +15,13 @@ class Ls:
     @property
     def description(self) -> str:
         return 'Показывает объекты в директории, ls [-l] <path...>'
+
+    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
+        expanded = os.path.expanduser(raw)
+        p = Path(expanded)
+        if not p.is_absolute():
+            p = Path(ctx.pwd) / p
+        return p.resolve(strict=False)
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         if not args:
@@ -26,45 +31,35 @@ class Ls:
         lines: list[str] = []
 
         for x in args:
-            path = self._fs.normalize(x)
-            if not (self._fs.is_dir(path) or self._fs.is_file(path)):
+            path = self._normalize(x, ctx)
+            if not (path.is_dir() or path.is_file()):
                 raise DomainError(f'{path} не существует')
 
-            if self._fs.is_dir(path):
-                for name in self._fs.list_dir(path):
-                    full = self._fs.path_join(path, name)
+            if path.is_dir():
+                for name in os.listdir(path):
+                    full = path / name
                     lines.append(self._format_entry(full, long))
                 if len(args) > 1:
                     lines.append('')
                 continue
 
-            if self._fs.is_file(path):
+            if path.is_file():
                 lines.append(self._format_entry(path, long))
                 continue
+
         if len(lines) > 0 and lines[-1] == '':
             lines.pop()
 
         return '\n'.join(lines)
 
-    def _format_entry(self, path: str, long: bool) -> str:
-        name = self._fs.basename(path)
+    def _format_entry(self, path: Path, long: bool) -> str:
+        name = path.name
         if not long:
             return name
 
-        st = self._fs.stat(path)
-        mode = st.get('mode')
-        size = st.get('size')
-        mtime = st.get('mtime')
-
-        perm = (
-            stat.filemode(mode)
-            if isinstance(mode, int)
-            else st.get('permissions', '???????????')
-        )
-        when = (
-            datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M')
-            if isinstance(mtime, (int, float))
-            else ''
-        )
+        st = path.stat()
+        perm = stat.filemode(st.st_mode)
+        size = st.st_size
+        when = datetime.fromtimestamp(st.st_mtime).strftime('%Y-%m-%d %H:%M')
 
         return f'{perm} {size:>10} {when} {name}'

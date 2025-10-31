@@ -187,7 +187,7 @@ class InMemoryFileSystemRepository:
         return self.normalize(path) in self._tree
 
     def set_current(self, path: str) -> None:
-        self._pwd = self.normalize(path)
+        self._pwd = path
 
     def expanduser(self, path: str) -> str:
         if path.startswith('~'):

@@ -1,12 +1,13 @@
+import os
+from pathlib import Path
+
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from entity.undo import UndoRecord
-from usecase.interface import FileSystemRepository
 
 
 class Mkdir:
-    def __init__(self, fs: FileSystemRepository) -> None:
-        self._fs = fs
+    def __init__(self) -> None:
         self._undo_records: list[UndoRecord] = []
 
     @property
@@ -29,32 +30,37 @@ class Mkdir:
     def _with_parents(self, flags: list[str]) -> bool:
         return ('-p' in flags) or ('--parents' in flags)
 
-    def _make_parents_if_needed(self, path: str, allow_parents: bool) -> list[str]:
-        created: list[str] = []
-        parent = self._fs.path_dirname(path) or '/'
+    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
+        expanded = os.path.expanduser(raw)
+        p = Path(expanded)
+        if not p.is_absolute():
+            p = Path(ctx.pwd) / p
+        return p.resolve(strict=False)
 
-        if self._fs.is_dir(parent):
+    def _make_parents_if_needed(self, path: Path, allow_parents: bool) -> list[str]:
+        created: list[str] = []
+        parent = path.parent
+        if parent.exists() and parent.is_dir():
             return created
 
         if not allow_parents:
             raise ValidationError(f'Родительская директория не существует: {parent}')
 
-        # Собираем директории до существующей
-        chain: list[str] = []
+        chain: list[Path] = []
         cur = parent
-        seen: set[str] = set()
-        while not self._fs.is_dir(cur):
+        seen: set[Path] = set()
+        while not (cur.exists() and cur.is_dir()):
             chain.append(cur)
-            nxt = self._fs.path_dirname(cur) or '/'
+            nxt = cur.parent
             if nxt == cur or cur in seen:
                 break
             seen.add(cur)
             cur = nxt
 
         for d in reversed(chain):
-            if not self._fs.is_dir(d):
-                self._fs.mkdir(d)
-                created.append(d)
+            if not d.exists():
+                d.mkdir()
+                created.append(str(d))
 
         return created
 
@@ -78,18 +84,19 @@ class Mkdir:
         total_created = 0
 
         for x in args:
-            path = self._fs.normalize(x)
+            path = self._normalize(x, ctx)
+
             created_parents = self._make_parents_if_needed(path, allow_parents)
             self._record_created_dirs(created_parents)
             total_created += len(created_parents)
 
-            if self._fs.is_dir(path):
+            if path.is_dir():
                 if not allow_parents:
                     raise ValidationError(f'Директория уже существует: {path}')
                 continue
 
-            self._fs.mkdir(path)
-            self._record_created_dirs([path])
+            path.mkdir()
+            self._record_created_dirs([str(path)])
             total_created += 1
 
         return f'mkdir: создано {total_created} директорий'

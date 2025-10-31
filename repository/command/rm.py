@@ -1,12 +1,15 @@
+import os
+import shutil
+import uuid
+from pathlib import Path
+
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from entity.undo import UndoRecord
-from usecase.interface import FileSystemRepository
 
 
 class Rm:
-    def __init__(self, fs: FileSystemRepository) -> None:
-        self._fs = fs
+    def __init__(self) -> None:
         self._undo_records: list[UndoRecord] = []
 
     @property
@@ -27,52 +30,71 @@ class Rm:
     def _is_recursive(self, flags: list[str]) -> bool:
         return ('-r' in flags) or ('-R' in flags) or ('--recursive' in flags)
 
-    def _record_rm(self, path: str, backup: str) -> None:
+    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
+        expanded = os.path.expanduser(raw)
+        p = Path(expanded)
+        if not p.is_absolute():
+            p = Path(ctx.pwd) / p
+        return p.resolve(strict=False)
+
+    def _ensure_trash(self, ctx: CommandContext) -> Path:
+        trash = Path(ctx.pwd) / '.trash'
+        trash.mkdir(parents=True, exist_ok=True)
+        return trash
+
+    def _record_rm(self, path: Path, backup: Path) -> None:
         self._undo_records.append(
             UndoRecord(
                 action='rm',
-                src=path,
-                dst=backup,
+                src=str(path),
+                dst=str(backup),
                 overwrite=False,
                 overwritten_path=None,
             )
         )
 
-    def _rm_file(self, path: str) -> str:
-        """Удаляет файл и возвращает путь в .trash"""
-        backup = self._fs.delete(path)
+    def _delete_to_trash(self, path: Path, trash_root: Path) -> Path:
+        # Делает уникальное имя в .trash и перемещает туда объект
+        suffix = f'.{uuid.uuid4().hex}'
+        target = trash_root / f'{path.name}{suffix}'
+        final = shutil.move(str(path), str(target))
+        return Path(final)
+
+    def _rm_file(self, path: Path, trash_root: Path) -> Path:
+        backup = self._delete_to_trash(path, trash_root)
         self._record_rm(path, backup)
         return backup
 
-    def _rm_dir(self, path: str) -> None:
-        """Удаляет директорию рекурсивно с записью undo на каждый объект"""
-        dirs_to_remove: list[str] = []
-
-        for cur_root, dirs, files in self._fs.walk(path):
+    def _rm_dir(self, path: Path, trash_root: Path) -> None:
+        dirs_to_remove: list[Path] = []
+        for cur_root, dirs, files in os.walk(path):
+            cur_root_path = Path(cur_root)
             for fname in files:
-                self._rm_file(self._fs.path_join(cur_root, fname))
+                self._rm_file(cur_root_path / fname, trash_root)
             for dname in dirs:
-                dirs_to_remove.append(self._fs.path_join(cur_root, dname))
+                dirs_to_remove.append(cur_root_path / dname)
 
-        for d in sorted(dirs_to_remove, key=len, reverse=True):
-            self._rm_file(d)
+        for d in sorted(dirs_to_remove, key=lambda p: len(str(p)), reverse=True):
+            self._rm_file(d, trash_root)
 
-        self._rm_file(path)
+        self._rm_file(path, trash_root)
 
-    def _confirm(self, src: str) -> bool:
+    def _confirm(self, src: Path) -> bool:
         ans = input(f'Удалить {src}? [y/N]: ').strip().lower()
         return ans in ('y', 'yes', 'д', 'да')
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._undo_records.clear()
         self._validate_args(args)
+
         recursive = self._is_recursive(flags)
         yes = '-y' in flags
+        trash_root = self._ensure_trash(ctx)
 
         for x in args:
-            src = self._fs.normalize(x)
-            is_file = self._fs.is_file(src)
-            is_dir = self._fs.is_dir(src)
+            src = self._normalize(x, ctx)
+            is_file = src.is_file()
+            is_dir = src.is_dir()
 
             if not is_file and not is_dir:
                 raise ValidationError(f'Путь не существует: {src}')
@@ -84,8 +106,8 @@ class Rm:
                 continue
 
             if is_file:
-                self._rm_file(src)
+                self._rm_file(src, trash_root)
             else:
-                self._rm_dir(src)
+                self._rm_dir(src, trash_root)
 
         return f'rm: удалено {len(self._undo_records)} объектов'

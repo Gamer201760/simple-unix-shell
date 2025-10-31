@@ -1,12 +1,15 @@
+import os
+import shutil
+import tempfile
+from pathlib import Path
+
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from entity.undo import UndoRecord
-from usecase.interface import FileSystemRepository
 
 
 class Cp:
-    def __init__(self, fs: FileSystemRepository) -> None:
-        self._fs = fs
+    def __init__(self) -> None:
         self._undo_records: list[UndoRecord] = []
 
     @property
@@ -26,86 +29,98 @@ class Cp:
                 'cp требует как минимум два аргумента: cp <source> <dest>'
             )
 
-    def _ensure_parent_dir_exists(self, path: str) -> None:
-        parent = self._fs.path_dirname(path) or '.'
-        if not self._fs.is_dir(parent):
+    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
+        expanded = os.path.expanduser(raw)
+        p = Path(expanded)
+        if not p.is_absolute():
+            p = Path(ctx.pwd) / p
+        return p.resolve(strict=False)
+
+    def _ensure_parent_dir_exists(self, path: Path) -> None:
+        parent = path.parent
+        if not (parent.exists() and parent.is_dir()):
             raise ValidationError(f'Целевая директория не существует: {parent}')
 
-    def _record_cp(self, src: str, dst: str, backup: str | None) -> None:
+    def _record_cp(self, src: Path, dst: Path, backup: str | None) -> None:
         self._undo_records.append(
             UndoRecord(
                 action='cp',
-                src=src,
-                dst=dst,
+                src=str(src),
+                dst=str(dst),
                 overwrite=backup is not None,
                 overwritten_path=backup,
             )
         )
 
-    def _copy_file_with_undo(self, src_file: str, dst_file: str) -> None:
+    def _backup_existing_file(self, path: Path) -> str:
+        tmp_dir = Path(tempfile.mkdtemp(prefix='.cp_undo_'))
+        backup_path = tmp_dir / path.name
+        shutil.copy2(str(path), str(backup_path))
+        path.unlink()
+        return str(backup_path)
+
+    def _copy_file_with_undo(self, src_file: Path, dst_file: Path) -> None:
         self._ensure_parent_dir_exists(dst_file)
 
         backup: str | None = None
-        if self._fs.is_file(dst_file):
-            backup = self._fs.delete(dst_file)
+        if dst_file.is_file():
+            backup = self._backup_existing_file(dst_file)
 
-        if self._fs.is_dir(dst_file):
+        if dst_file.exists() and dst_file.is_dir():
             raise ValidationError(f'Нельзя перезаписать директорию файлом: {dst_file}')
 
-        self._fs.copy(src_file, dst_file)
+        shutil.copy2(str(src_file), str(dst_file))
         self._record_cp(src_file, dst_file, backup)
 
-    def _mkdir_if_not_exists(self, path: str) -> None:
-        if not self._fs.is_dir(path):
-            self._fs.mkdir(path)
+    def _mkdir_if_not_exists(self, path: Path) -> None:
+        path.mkdir(parents=True, exist_ok=True)
 
     def _is_recursive(self, flags: list[str]) -> bool:
         return ('-r' in flags) or ('-R' in flags) or ('--recursive' in flags)
 
     def _is_dir_content_path(self, path: str) -> tuple[bool, str]:
-        if self._fs.basename(path) == '*':
-            base_dir = self._fs.path_dirname(path)
+        if Path(path).name == '*':
+            base_dir = str(Path(path).parent)
             return True, base_dir if base_dir else path
         return False, path
 
-    def _copy_dir_recursive(self, src_dir: str, dst: str, place_inside: bool) -> None:
+    def _copy_dir_recursive(self, src_dir: Path, dst: Path, place_inside: bool) -> None:
         """
-        Если place_inside=True: корнем назначения будет join(dst, basename(src_dir)).
+        Если place_inside=True: корнем назначения будет dst / basename(src_dir).
         Если place_inside=False: корнем назначения будет dst (слияние содержимого src_dir в dst).
         """
-        root_dst = (
-            self._fs.path_join(dst, self._fs.basename(src_dir)) if place_inside else dst
-        )
+        root_dst = (dst / src_dir.name) if place_inside else dst
         self._mkdir_if_not_exists(root_dst)
 
-        for cur_root, dirs, files in self._fs.walk(src_dir):
-            rel = self._fs.path_relpath(cur_root, src_dir)
-            target_dir = root_dst if rel == '.' else self._fs.path_join(root_dst, rel)
+        for cur_root, dirs, files in os.walk(src_dir):
+            cur_root_path = Path(cur_root)
+            rel = os.path.relpath(cur_root_path, src_dir)
+            target_dir = root_dst if rel == '.' else root_dst / rel
             self._mkdir_if_not_exists(target_dir)
 
             for d in dirs:
-                self._mkdir_if_not_exists(self._fs.path_join(target_dir, d))
+                self._mkdir_if_not_exists(target_dir / d)
 
             for fname in files:
-                s = self._fs.path_join(cur_root, fname)
-                d = self._fs.path_join(target_dir, fname)
-                if self._fs.is_dir(d):
+                s = cur_root_path / fname
+                d = target_dir / fname
+                if d.exists() and d.is_dir():
                     raise ValidationError(
                         f'Конфликт типов: в цели директория, а копируется файл: {d}'
                     )
                 backup: str | None = None
-                if self._fs.is_file(d):
-                    backup = self._fs.delete(d)
-                self._fs.copy(s, d)
+                if d.is_file():
+                    backup = self._backup_existing_file(d)
+                shutil.copy2(str(s), str(d))
                 self._record_cp(s, d, backup)
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._undo_records.clear()
         self._validate_args(args)
         *srcs, dst = args
-        dst = self._fs.normalize(dst)
+        dst_path = self._normalize(dst, ctx)
 
-        if len(srcs) > 1 and not self._fs.is_dir(dst):
+        if len(srcs) > 1 and not dst_path.is_dir():
             raise ValidationError(
                 'Если копируется несколько объектов, последний аргумент должен быть существующей директорией'
             )
@@ -113,39 +128,39 @@ class Cp:
         recursive = self._is_recursive(flags)
 
         for x in srcs:
-            raw_src = self._fs.normalize(x)
-            content_mode, src = self._is_dir_content_path(raw_src)
-            is_src_file = self._fs.is_file(src)
-            is_src_dir = self._fs.is_dir(src)
+            content_mode, src_base = self._is_dir_content_path(x)
+            src_path = self._normalize(src_base, ctx)
+
+            is_src_file = src_path.is_file()
+            is_src_dir = src_path.is_dir()
             if not is_src_file and not is_src_dir:
-                raise ValidationError(f'Источник не найден: {raw_src}')
+                raise ValidationError(f'Источник не найден: {x}')
 
             if is_src_file:
                 target = (
-                    self._fs.path_join(dst, self._fs.basename(src))
-                    if (len(srcs) > 1 or self._fs.is_dir(dst))
-                    else dst
+                    (dst_path / src_path.name)
+                    if (len(srcs) > 1 or dst_path.is_dir())
+                    else dst_path
                 )
-                self._copy_file_with_undo(src, target)
+                self._copy_file_with_undo(src_path, target)
                 continue
 
             if not recursive:
                 raise ValidationError('Для копирования директории нужен флаг -r')
 
-            if len(srcs) == 1 and self._fs.is_file(dst):
+            if len(srcs) == 1 and dst_path.is_file():
                 raise ValidationError('Нельзя перезаписать файл директорией')
 
-            if not self._fs.is_dir(dst):
+            if not dst_path.is_dir():
                 if len(srcs) > 1:
                     raise ValidationError(
                         'Целевая директория должна существовать при копировании нескольких источников'
                     )
-                # cp -r src dst (dst не существует): создаём dst и вливаем СОДЕРЖИМОЕ src в dst
-                self._mkdir_if_not_exists(dst)
-                self._copy_dir_recursive(src, dst, place_inside=False)
+                self._mkdir_if_not_exists(dst_path)
+                self._copy_dir_recursive(src_path, dst_path, place_inside=False)
             else:
-                # dst — существующая директория:
-                # по умолчанию place-inside (dst/basename(src)), а для "<src>/." — слияние содержимого в dst
-                self._copy_dir_recursive(src, dst, place_inside=not content_mode)
+                self._copy_dir_recursive(
+                    src_path, dst_path, place_inside=not content_mode
+                )
 
         return f'cp: скопировано {len(self._undo_records)} объектов'

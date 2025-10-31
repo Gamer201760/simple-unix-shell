@@ -20,11 +20,6 @@ UNIX_TREE = {
 
 
 @pytest.fixture
-def ctx() -> CommandContext:
-    return CommandContext(pwd='/home/test', home='/home/test', user='test')
-
-
-@pytest.fixture
 def fs(ctx: CommandContext) -> FileSystemRepository:
     return InMemoryFileSystemRepository(deepcopy(UNIX_TREE))
 
