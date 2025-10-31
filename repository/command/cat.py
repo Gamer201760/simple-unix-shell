@@ -25,7 +25,7 @@ class Cat:
             if not src.is_file():
                 raise DomainError(f'{src} не файл')
             try:
-                parts.append(src.read_text(encoding='utf-8'))
+                parts.append(src.read_text(encoding='utf-8').strip())
             except UnicodeDecodeError:
                 raise DomainError(f'{src} файл не в кодировке utf-8')
-        return '\n'.join(parts) + '\n'
+        return '\n'.join(parts)

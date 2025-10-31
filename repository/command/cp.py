@@ -72,7 +72,7 @@ class Cp:
         shutil.copy2(str(src_file), str(dst_file))
         self._record_cp(src_file, dst_file, backup)
 
-    def _mkdir_if_not_exists(self, path: Path) -> None:
+    def _ensure_parent(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
 
     def _is_recursive(self, flags: list[str]) -> bool:
@@ -90,16 +90,16 @@ class Cp:
         Если place_inside=False: корнем назначения будет dst (слияние содержимого src_dir в dst).
         """
         root_dst = (dst / src_dir.name) if place_inside else dst
-        self._mkdir_if_not_exists(root_dst)
+        self._ensure_parent(root_dst)
 
         for cur_root, dirs, files in os.walk(src_dir):
             cur_root_path = Path(cur_root)
             rel = os.path.relpath(cur_root_path, src_dir)
             target_dir = root_dst if rel == '.' else root_dst / rel
-            self._mkdir_if_not_exists(target_dir)
+            self._ensure_parent(target_dir)
 
             for dir in dirs:
-                self._mkdir_if_not_exists(target_dir / dir)
+                self._ensure_parent(target_dir / dir)
 
             for fname in files:
                 s = cur_root_path / fname
@@ -156,7 +156,7 @@ class Cp:
                     raise ValidationError(
                         'Целевая директория должна существовать при копировании нескольких источников'
                     )
-                self._mkdir_if_not_exists(dst_path)
+                self._ensure_parent(dst_path)
                 self._copy_dir_recursive(src_path, dst_path, place_inside=False)
             else:
                 self._copy_dir_recursive(

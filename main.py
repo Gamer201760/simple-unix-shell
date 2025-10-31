@@ -23,8 +23,8 @@ from repository.command.untar import Untar
 from repository.command.unzip import Unzip
 from repository.command.whoami import WhoAmI
 from repository.command.zip import Zip
-from repository.in_memory_history_repo import InMemoryHistory
-from repository.in_memory_undo_repo import InMemoryUndoRepository
+from repository.history_file_repository import HistoryFileRepository
+from repository.undo_file_repository import UndoJsonRepository
 from usecase.shell import Shell
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,8 +40,8 @@ logging.basicConfig(
 
 
 def main() -> None:
-    undo_repo = InMemoryUndoRepository()
-    history = InMemoryHistory()
+    undo_repo = UndoJsonRepository(os.path.join(ROOT_DIR, '.undo.json'))
+    history = HistoryFileRepository(os.path.join(ROOT_DIR, '.history'))
     trash_dir = os.path.join(ROOT_DIR, '.trash')
     list_cmds: list[Command] = [
         Exit(),

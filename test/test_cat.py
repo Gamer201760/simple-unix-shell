@@ -11,7 +11,7 @@ def test_cat_single_file_returns_with_trailing_newline(
     fs.create_dir('/etc')
     fs.create_file('/etc/hosts', contents='LINE1')
     out = cat.execute(['/etc/hosts'], [], ctx)
-    assert out == 'LINE1\n'
+    assert out == 'LINE1'
 
 
 def test_cat_multiple_files_concatenates_in_order(cat: Cat, fs, ctx: CommandContext):
@@ -19,7 +19,7 @@ def test_cat_multiple_files_concatenates_in_order(cat: Cat, fs, ctx: CommandCont
     fs.create_file('/etc/hosts', contents='H1')
     fs.create_file('/home/test/etc/conf', contents='C2')
     out = cat.execute(['/etc/hosts', '/home/test/etc/conf'], [], ctx)
-    assert out == 'H1\nC2\n'
+    assert out == 'H1\nC2'
 
 
 def test_cat_keeps_argument_order(cat: Cat, fs, ctx: CommandContext):
@@ -27,7 +27,7 @@ def test_cat_keeps_argument_order(cat: Cat, fs, ctx: CommandContext):
     fs.create_file('/etc/a', contents='A')
     fs.create_file('/etc/b', contents='B')
     out = cat.execute(['/etc/b', '/etc/a'], [], ctx)
-    assert out == 'B\nA\n'
+    assert out == 'B\nA'
 
 
 def test_cat_error_when_no_args(cat: Cat, fs, ctx: CommandContext):

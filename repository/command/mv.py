@@ -63,31 +63,57 @@ class Mv:
         self._ensure_parent(dst_path)
         return shutil.move(str(src_dir), str(dst_path))
 
+    def _backup_existing_dir(self, path: Path) -> str:
+        tmp_root = Path(tempfile.mkdtemp(prefix='.mv_dir_undo_'))
+        backup = tmp_root / path.name
+        shutil.move(str(path), str(backup))
+        return str(backup)
+
     def _move_single(
         self, src_path: Path, dst_path: Path, multi: bool
     ) -> tuple[str, bool, str | None]:
         if src_path.is_dir():
             if dst_path.is_dir() or multi:
-                final = self._move_into_dir(src_path, dst_path)
-                return final, False, None
-            if not dst_path.exists():
-                parent = dst_path.parent
-                if not parent.exists() or not parent.is_dir():
-                    raise ValidationError('Родительская директория цели не существует')
-                final = self._rename_dir(src_path, dst_path)
-                return final, False, None
-            if dst_path.is_dir():
-                final = self._move_into_dir(src_path, dst_path)
-                return final, False, None
-            raise ValidationError('Нельзя перезаписать файл директорией')
-        else:
-            if dst_path.is_dir() or multi:
-                final = self._move_into_dir(src_path, dst_path)
-                return final, False, None
+                if dst_path.is_relative_to(src_path):
+                    raise ValidationError(
+                        'Нельзя переместить директорию внутрь самой себя'
+                    )
+                target = dst_path / src_path.name
+                backup = None
+                if target.exists():
+                    if target.is_file():
+                        raise ValidationError(
+                            f'Конфликт типов: в цели файл, а переносится директория: {target}'
+                        )
+                    backup = self._backup_existing_dir(target)
+                final = shutil.move(str(src_path), str(dst_path))
+                return (
+                    final,
+                    backup is not None,
+                    backup,
+                )
+
             parent = dst_path.parent
             if not parent.exists() or not parent.is_dir():
                 raise ValidationError('Родительская директория цели не существует')
-            return self._rename_file(src_path, dst_path)
+            if dst_path.is_relative_to(src_path):
+                raise ValidationError('Нельзя переместить директорию внутрь самой себя')
+            backup = None
+            if dst_path.exists():
+                if dst_path.is_file():
+                    raise ValidationError('Нельзя перезаписать файл директорией')
+                backup = self._backup_existing_dir(dst_path)
+            final = shutil.move(str(src_path), str(dst_path))
+            return final, backup is not None, backup
+
+        if dst_path.is_dir() or multi:
+            target = dst_path / src_path.name
+            return self._rename_file(src_path, target)
+
+        parent = dst_path.parent
+        if not parent.exists() or not parent.is_dir():
+            raise ValidationError('Родительская директория цели не существует')
+        return self._rename_file(src_path, dst_path)
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._undo_records.clear()
