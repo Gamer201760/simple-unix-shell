@@ -1,3 +1,4 @@
+import shlex
 from logging import getLogger
 
 from entity.errors import DomainError, ValidationError
@@ -17,7 +18,7 @@ class CLIAdapter:
                 line = input(f'{self.shell.user}@{self.shell.pwd}$ ').strip()
                 if not line:
                     continue
-                parts = line.split()
+                parts = shlex.split(line)
                 name = parts[0]
                 args = []
                 flags = []
@@ -33,6 +34,9 @@ class CLIAdapter:
             except EOFError:
                 print('\nЗавершение shell')
                 break
+            except PermissionError as e:
+                logger.error(e)
+                print('Не достаточно прав')
             except ValidationError as e:
                 logger.warning(e)
                 print(e)
