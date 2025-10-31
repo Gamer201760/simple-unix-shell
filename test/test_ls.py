@@ -3,7 +3,7 @@ import pytest
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import DomainError
-from test.conftest import _setup_tree
+from test.conftest import setup_tree
 
 
 @pytest.mark.parametrize(
@@ -14,7 +14,7 @@ from test.conftest import _setup_tree
     ),
 )
 def test_invalid(args: list[str], ls: Command, fs, ctx: CommandContext):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     with pytest.raises(DomainError):
         ls.execute(args, [], ctx)
 
@@ -37,7 +37,7 @@ def test_invalid(args: list[str], ls: Command, fs, ctx: CommandContext):
     ),
 )
 def test_valid(args: list[str], ls: Command, fs, ctx: CommandContext):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     ls.execute(args, [], ctx)
 
 
@@ -60,5 +60,5 @@ def test_execute(
     fs,
     ctx: CommandContext,
 ):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     assert ls.execute(args, [], ctx) == expected

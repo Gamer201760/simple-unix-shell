@@ -12,10 +12,12 @@ from repository.command.mkdir import Mkdir
 from repository.command.mv import Mv
 from repository.command.pwd import Pwd
 from repository.command.rm import Rm
+from repository.command.unzip import Unzip
 from repository.command.whoami import WhoAmI
+from repository.command.zip import Zip
 
 
-def _setup_tree(fs, ctx: CommandContext):
+def setup_tree(fs, ctx: CommandContext):
     ctx.pwd = '/vfs/home/test'
     ctx.home = '/vfs/home/test'
     ctx.user = 'test'
@@ -84,3 +86,13 @@ def whoami() -> WhoAmI:
 @pytest.fixture
 def pwd() -> Pwd:
     return Pwd()
+
+
+@pytest.fixture
+def zip() -> Zip:
+    return Zip()
+
+
+@pytest.fixture
+def unzip() -> Unzip:
+    return Unzip()

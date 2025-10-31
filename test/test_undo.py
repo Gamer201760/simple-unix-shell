@@ -9,7 +9,7 @@ from repository.command.mv import Mv
 from repository.command.rm import Rm
 from repository.command.undo import Undo
 from repository.in_memory_undo_repo import InMemoryUndoRepository
-from test.conftest import _setup_tree
+from test.conftest import setup_tree
 from usecase.interface import UndoRepository
 
 
@@ -26,7 +26,7 @@ def undo(undo_repo: UndoRepository, fs) -> Undo:
 def test_undo_cp_new_file(
     fs, cp: Cp, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     cp.execute(['/vfs/photos/photo1.png', '/vfs/home/test/newfile.png'], [], ctx)
     undo_repo.add(cp.undo())
     assert Path('/vfs/home/test/newfile.png').is_file()
@@ -37,7 +37,7 @@ def test_undo_cp_new_file(
 def test_undo_cp_overwrite(
     fs, cp: Cp, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     Path('/vfs/home/test').mkdir(parents=True, exist_ok=True)
     Path('/vfs/home/test/exist.png').write_text('OLDVAL')
     cp.execute(['/vfs/photos/photo1.png', '/vfs/home/test/exist.png'], [], ctx)
@@ -50,7 +50,7 @@ def test_undo_cp_overwrite(
 def test_undo_mv(
     fs, mv: Mv, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     mv.execute(['/vfs/photos/photo1.png', '/vfs/home/test/restored.png'], [], ctx)
     undo_repo.add(mv.undo())
     assert Path('/vfs/home/test/restored.png').is_file()
@@ -63,7 +63,7 @@ def test_undo_mv(
 def test_undo_mv_overwrite(
     fs, mv: Mv, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     Path('/vfs/home/test/exist.png').write_text('ORIGINAL')
     mv.execute(['/vfs/photos/my.png', '/vfs/home/test/exist.png'], [], ctx)
     undo_repo.add(mv.undo())
@@ -75,7 +75,7 @@ def test_undo_mv_overwrite(
 def test_undo_cp_batch(
     fs, cp: Cp, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     cp.execute(
         ['/vfs/photos/photo1.png', '/vfs/photos/my.png', '/vfs/home/test'], [], ctx
     )
@@ -95,7 +95,7 @@ def test_undo_no_records(undo: Undo, ctx: CommandContext) -> None:
 def test_undo_rm_file_restore(
     fs, rm: Rm, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     assert Path('/vfs/photos/my.png').is_file()
     rm.execute(['/vfs/photos/my.png'], ['-y'], ctx)
     undo_repo.add(rm.undo())
@@ -107,7 +107,7 @@ def test_undo_rm_file_restore(
 def test_undo_rm_r_dir_restore_tree(
     fs, rm: Rm, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     Path('/vfs/photos/album').mkdir(parents=True, exist_ok=True)
     Path('/vfs/photos/album/p1.jpg').write_text('X')
     Path('/vfs/photos/album/p2.jpg').write_text('Y')
@@ -127,7 +127,7 @@ def test_undo_rm_r_dir_restore_tree(
 def test_undo_rm_multiple_files_restore(
     fs, rm: Rm, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
 ) -> None:
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     assert Path('/vfs/photos/photo1.png').is_file()
     assert Path('/vfs/photos/Azamat.jpg').is_file()
     rm.execute(['/vfs/photos/photo1.png', '/vfs/photos/Azamat.jpg'], ['-y'], ctx)
@@ -140,7 +140,7 @@ def test_undo_rm_multiple_files_restore(
 
 
 def test_rm_r_undo_returns_apply_ready_order(fs, rm: Rm, ctx: CommandContext):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     Path('/vfs/tmpdata/a/b').mkdir(parents=True, exist_ok=True)
     Path('/vfs/tmpdata/f1').write_text('1')
     Path('/vfs/tmpdata/a/f2').write_text('2')

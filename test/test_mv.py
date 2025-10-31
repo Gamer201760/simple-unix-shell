@@ -5,7 +5,7 @@ import pytest
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
-from test.conftest import _setup_tree
+from test.conftest import setup_tree
 
 
 @pytest.mark.parametrize(
@@ -17,7 +17,7 @@ from test.conftest import _setup_tree
     ),
 )
 def test_invalid_mv(args: list[str], mv: Command, fs, ctx: CommandContext):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     with pytest.raises(ValidationError):
         mv.execute(args, [], ctx)
 
@@ -52,7 +52,7 @@ def test_valid_mv(
     fs,
     ctx: CommandContext,
 ):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     mv.execute([src, dst], [], ctx)
     assert Path(expected_path).exists()
 
@@ -73,7 +73,7 @@ def test_mv_remove_from_src_and_appear_in_dst(
     fs,
     ctx: CommandContext,
 ):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     mv.execute([src, dst], [], ctx)
     assert not Path(src).exists()
     assert Path(dst).exists()

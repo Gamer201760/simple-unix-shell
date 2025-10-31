@@ -6,11 +6,11 @@ import pytest
 from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import ValidationError
-from test.conftest import _setup_tree
+from test.conftest import setup_tree
 
 
 def test_rm_file_deletes_and_moves_to_trash(rm: Command, fs, ctx: CommandContext):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     assert Path('/vfs/photos/photo1.png').is_file()
     rm.execute(['/vfs/photos/photo1.png'], ['-y'], ctx)
     assert not Path('/vfs/photos/photo1.png').exists()
@@ -26,7 +26,7 @@ def test_rm_file_deletes_and_moves_to_trash(rm: Command, fs, ctx: CommandContext
 
 
 def test_rm_dir_without_r_is_error(rm: Command, fs, ctx: CommandContext, monkeypatch):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
 
     def fail_input(*a, **k):
         raise AssertionError('input() must not be called without -r')
@@ -37,7 +37,7 @@ def test_rm_dir_without_r_is_error(rm: Command, fs, ctx: CommandContext, monkeyp
 
 
 def test_rm_r_dir_deletes_recursively(rm: Command, fs, ctx: CommandContext):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     fs.create_dir('/vfs/photos/album')
     fs.create_file('/vfs/photos/album/p1.jpg', contents='X')
     fs.create_file('/vfs/photos/album/p2.jpg', contents='Y')
@@ -57,7 +57,7 @@ def test_rm_r_dir_deletes_recursively(rm: Command, fs, ctx: CommandContext):
 
 
 def test_rm_multiple_files(rm: Command, fs, ctx: CommandContext):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     assert Path('/vfs/photos/photo1.png').is_file()
     assert Path('/vfs/photos/my.png').is_file()
     rm.execute(['/vfs/photos/photo1.png', '/vfs/photos/my.png'], ['-y'], ctx)
@@ -70,7 +70,7 @@ def test_rm_multiple_files(rm: Command, fs, ctx: CommandContext):
 
 
 def test_rm_r_mixed_file_and_dir(rm: Command, fs, ctx: CommandContext, monkeypatch):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     fs.create_dir('/vfs/etc/conf')
     fs.create_file('/vfs/etc/conf/app.ini', contents='CFG')
 
@@ -92,7 +92,7 @@ def test_rm_r_mixed_file_and_dir(rm: Command, fs, ctx: CommandContext, monkeypat
 def test_rm_nonexistent_path_is_error(
     rm: Command, fs, ctx: CommandContext, monkeypatch
 ):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
 
     def fail_input(*a, **k):
         raise AssertionError('input() must not be called for nonexistent path')
@@ -105,7 +105,7 @@ def test_rm_nonexistent_path_is_error(
 def test_rm_prompts_and_respects_answer(
     rm: Command, fs, ctx: CommandContext, monkeypatch
 ):
-    _setup_tree(fs, ctx)
+    setup_tree(fs, ctx)
     fs.create_file('/vfs/etc/hosts', contents='H')
 
     monkeypatch.setattr(builtins, 'input', lambda *_: 'n')
