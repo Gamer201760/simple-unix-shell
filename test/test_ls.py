@@ -44,12 +44,12 @@ def test_valid(args: list[str], ls: Command, fs, ctx: CommandContext):
 @pytest.mark.parametrize(
     'args,expected',
     [
-        (['~'], 'etc'),
+        (['~'], 'etc/'),
         (['/vfs/home/test2'], ''),
-        (['../..'], 'home\netc\nphotos'),
+        (['../..'], 'home/\netc/\nphotos/'),
         (['etc'], ''),
-        (['etc/..'], 'etc'),
-        (['etc/../..'], 'test\ntest2'),
+        (['etc/..'], 'etc/'),
+        (['etc/../..'], 'test/\ntest2/'),
         (['etc/../../../photos'], 'photo1.png\nmy.png\nAzamat.jpg\nnew photo.png'),
     ],
 )
