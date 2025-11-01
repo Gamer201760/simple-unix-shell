@@ -1,17 +1,17 @@
 # Unix-shell
-Простой unix shell на Python
+Простой интерактивный unix shell на Python
 
 **Поддержка команд:**
 * `cd <path>`
-* `ls <path>`
-* `mv <source> <dest>`
-* `cp <source> <dest>`
-* `rm <path>`
-* `cat <path>`
-* `grep <pattern> <path>`
-* `zip <folder> <archive.zip>`
-* `unzip <archive.zip> <folder>`
-* `tar <folder> <archive.tar.gz>`
+* `ls [-l] <path...>`
+* `mv [-r] <source...> <dest>`
+* `cp [-r] <source...> <dest>`
+* `rm [-r] [-y] <path...>`
+* `cat <path...>`
+* `grep [-r] [-i] <pattern> <path>`
+* `zip [-r] <source...> <archive.zip>`
+* `unzip <archive.zip> <dest>`
+* `tar [-r] <source...> <archive.tar.gz>`
 * `untar <archive.tar.gz> <folder>`
 * `history <n>`
 * `undo`
@@ -22,6 +22,7 @@
 История команд хранится в `.history`
 Логи в `shell.log`
 
+Команды поддерживают флаг `-h`, для вывода описания 
 
 ## Оглавление
 - [Использование](#использование)
@@ -60,7 +61,7 @@ uv run main.py
 
 ## Архитектура Проекта
 *   **`domain/` — Ядро бизнес-логики.**
-    *   Определяет основные сущности: ...
+    *   Определяет основные сущности: `Command`, `CommandContext`, `UndoRecord` 
 *   **`usecase/` — Слой бизнес-сценариев.**
     *   Определяет интерфейсы (`interface.py`) для внешних зависимостей.
 *   **`repository/` — Реализации интерфейсов.**
