@@ -13,10 +13,12 @@
 * `unzip <archive.zip> <dest>`
 * `tar [-r] <source...> <archive.tar.gz>`
 * `untar <archive.tar.gz> <folder>`
+* `mkdir [-p] <path...>`
 * `history <n>`
 * `undo`
 * `pwd`
 * `whoami`
+* `exit`
 
 Удалённые файлы хранятся в `.trash`
 История команд хранится в `.history`
