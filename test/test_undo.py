@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -45,6 +46,32 @@ def test_undo_cp_overwrite(
     assert Path('/vfs/home/test/exist.png').read_text() == 'IMG1'
     undo.execute([], [], ctx)
     assert Path('/vfs/home/test/exist.png').read_text() == 'OLDVAL'
+
+
+def test_undo_cp_overwrite_dir(
+    fs, cp: Cp, undo_repo: UndoRepository, undo: Undo, ctx: CommandContext
+) -> None:
+    setup_tree(fs, ctx)
+
+    fs.create_dir('/vfs/backup')
+    fs.create_dir('/vfs/backup/photos')
+    fs.create_file('/vfs/backup/1', contents='new 1')
+    fs.create_file('/vfs/backup/2', contents='new 2')
+
+    fs.create_file('/vfs/1', contents='photos 1')
+    fs.create_file('/vfs/2', contents='photos 2')
+
+    cp.execute(['/vfs/photos', '/vfs/1', '/vfs/2', '/vfs/backup'], ['-r'], ctx)
+    undo_repo.add(cp.undo())
+    assert Path('/vfs/backup/1').read_text() == 'photos 1'
+    assert Path('/vfs/backup/2').read_text() == 'photos 2'
+    assert os.listdir('/vfs/backup/photos') == os.listdir('/vfs/photos')
+
+    undo.execute([], [], ctx)
+
+    assert Path('/vfs/backup/1').read_text() == 'new 1'
+    assert Path('/vfs/backup/2').read_text() == 'new 2'
+    assert os.listdir('/vfs/backup/photos') == []
 
 
 def test_undo_mv(

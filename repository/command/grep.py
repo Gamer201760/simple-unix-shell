@@ -48,8 +48,7 @@ class Grep:
         recursive = self._is_recursive(flags)
         ignore_case = self._is_case_insensitive(flags)
 
-        pattern = args[0]
-        raw_paths = args[1:]
+        pattern, *raw_paths = args
         paths = [normalize(x, ctx) for x in raw_paths]
 
         re_flags = re.IGNORECASE if ignore_case else 0

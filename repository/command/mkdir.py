@@ -25,71 +25,64 @@ class Mkdir:
         if len(args) < 1:
             raise ValidationError('mkdir требует как минимум один аргумент: mkdir -h')
 
-    def _with_parents(self, flags: list[str]) -> bool:
+    def _has_parents_flag(self, flags: list[str]) -> bool:
         return ('-p' in flags) or ('--parents' in flags)
 
-    def _make_parents_if_needed(self, path: Path, allow_parents: bool) -> list[str]:
-        created: list[str] = []
-        parent = path.parent
-        if parent.exists() and parent.is_dir():
-            return created
+    def _collect_missing_parents(self, path: Path) -> list[Path]:
+        missing = []
+        current = path
 
-        if not allow_parents:
-            raise ValidationError(f'Родительская директория не существует: {parent}')
-
-        chain: list[Path] = []
-        cur = parent
-        seen: set[Path] = set()
-        while not (cur.exists() and cur.is_dir()):
-            chain.append(cur)
-            nxt = cur.parent
-            if nxt == cur or cur in seen:
+        while not current.exists():
+            missing.append(current)
+            parent = current.parent
+            if parent == current:
                 break
-            seen.add(cur)
-            cur = nxt
+            current = parent
 
-        for d in reversed(chain):
-            if not d.exists():
-                d.mkdir()
-                created.append(str(d))
+        return list(reversed(missing))
 
-        return created
-
-    def _record_created_dirs(self, created: list[str]) -> None:
-        for d in created:
-            self._undo_records.append(
-                UndoRecord(
-                    action='cp',
-                    src=d,
-                    dst=d,
-                    overwrite=False,
-                    overwritten_path=None,
-                )
+    def _record_undo(self, path: Path) -> None:
+        self._undo_records.append(
+            UndoRecord(
+                action='cp',
+                src=str(path),
+                dst=str(path),
+                overwrite=False,
+                overwritten_path=None,
             )
+        )
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._undo_records.clear()
         self._validate_args(args)
 
-        allow_parents = self._with_parents(flags)
-        total_created = 0
+        allow_parents = self._has_parents_flag(flags)
+        created_count = 0
 
-        for x in args:
-            path = normalize(x, ctx)
+        for arg in args:
+            path = normalize(arg, ctx)
 
-            created_parents = self._make_parents_if_needed(path, allow_parents)
-            self._record_created_dirs(created_parents)
-            total_created += len(created_parents)
-
-            if path.exists():
-                if path.is_dir():
-                    if not allow_parents:
-                        raise ValidationError(f'Директория уже существует: {path}')
-                    continue
+            if path.exists() and not path.is_dir():
                 raise ValidationError(f'Путь уже существует и является файлом: {path}')
 
-            path.mkdir()
-            self._record_created_dirs([str(path)])
-            total_created += 1
+            if path.exists():
+                if not allow_parents:
+                    raise ValidationError(f'Директория уже существует: {path}')
+                continue
 
-        return f'mkdir: создано {total_created} директорий'
+            if not allow_parents and (
+                not path.parent.exists() or not path.parent.is_dir()
+            ):
+                raise ValidationError(
+                    f'Родительская директория не существует: {path.parent}'
+                )
+
+            missing = self._collect_missing_parents(path)
+
+            path.mkdir(parents=allow_parents, exist_ok=False)
+
+            for created_path in missing:
+                self._record_undo(created_path)
+                created_count += 1
+
+        return f'mkdir: создано {created_count} директорий'
