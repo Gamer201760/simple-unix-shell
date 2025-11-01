@@ -9,19 +9,8 @@ from repository.command.cp import Cp
 from repository.command.mv import Mv
 from repository.command.rm import Rm
 from repository.command.undo import Undo
-from repository.in_memory_undo_repo import InMemoryUndoRepository
 from test.conftest import setup_tree
 from usecase.interface import UndoRepository
-
-
-@pytest.fixture
-def undo_repo() -> UndoRepository:
-    return InMemoryUndoRepository()
-
-
-@pytest.fixture
-def undo(undo_repo: UndoRepository, fs) -> Undo:
-    return Undo(undo_repo)
 
 
 def test_undo_cp_new_file(

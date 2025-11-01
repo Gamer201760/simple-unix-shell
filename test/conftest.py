@@ -14,10 +14,13 @@ from repository.command.mv import Mv
 from repository.command.pwd import Pwd
 from repository.command.rm import Rm
 from repository.command.tar import Tar
+from repository.command.undo import Undo
 from repository.command.untar import Untar
 from repository.command.unzip import Unzip
 from repository.command.whoami import WhoAmI
 from repository.command.zip import Zip
+from repository.in_memory_undo_repo import InMemoryUndoRepository
+from usecase.interface import UndoRepository
 
 
 def setup_tree(fs, ctx: CommandContext):
@@ -114,3 +117,13 @@ def untar() -> Untar:
 @pytest.fixture
 def grep() -> Grep:
     return Grep()
+
+
+@pytest.fixture
+def undo_repo() -> UndoRepository:
+    return InMemoryUndoRepository()
+
+
+@pytest.fixture
+def undo(undo_repo: UndoRepository) -> Undo:
+    return Undo(undo_repo)
