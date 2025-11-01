@@ -8,7 +8,7 @@ class Exit:
 
     @property
     def description(self) -> str:
-        return 'Выйти из simple-unix-shell'
+        return 'Выйти из интерактивной оболочки'
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         raise EOFError

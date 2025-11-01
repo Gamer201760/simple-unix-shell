@@ -18,9 +18,7 @@ class Untar:
 
     def _validate_args(self, args: list[str]) -> None:
         if len(args) < 1 or len(args) > 2:
-            raise ValidationError(
-                'untar.gz принимает 1 или 2 аргумента: untar.gz <archive.tar.gz|.tgz> [dest_dir]'
-            )
+            raise ValidationError('untar.gz принимает 1 или 2 аргумента: untar -h')
 
     def _ensure_targz(self, path: Path) -> None:
         name = path.name.lower()

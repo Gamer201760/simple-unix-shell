@@ -23,9 +23,7 @@ class Mkdir:
 
     def _validate_args(self, args: list[str]) -> None:
         if len(args) < 1:
-            raise ValidationError(
-                'mkdir требует как минимум один аргумент, см: mkdir -h'
-            )
+            raise ValidationError('mkdir требует как минимум один аргумент: mkdir -h')
 
     def _with_parents(self, flags: list[str]) -> bool:
         return ('-p' in flags) or ('--parents' in flags)

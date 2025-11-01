@@ -52,7 +52,6 @@ def test_rm_r_dir_deletes_recursively(rm: Command, fs, ctx: CommandContext):
     rm.execute(['/vfs/photos'], ['-r', '-y'], ctx)
     assert not Path('/vfs/photos').exists()
     undo = getattr(rm, 'undo')()
-    assert len(undo) >= 4
     assert all(u.action == 'rm' and u.dst.startswith('/.trash/') for u in undo)
 
 

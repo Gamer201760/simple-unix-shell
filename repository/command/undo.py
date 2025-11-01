@@ -66,9 +66,7 @@ class Undo:
                     self._ensure_parent(dst)
                     shutil.move(str(overwritten), str(dst))
                     res_parts.append(
-                        'Откат: восстановлен старый {0}; копия удалена'.format(
-                            record.dst
-                        )
+                        f'Откат: восстановлен старый {record.dst}; копия удалена'
                     )
                     continue
                 self._delete_path(dst)

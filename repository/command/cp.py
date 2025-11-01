@@ -6,6 +6,7 @@ from pathlib import Path
 from entity.context import CommandContext
 from entity.errors import ValidationError
 from entity.undo import UndoRecord
+from repository.command.path_utils import normalize
 
 
 class Cp:
@@ -25,23 +26,17 @@ class Cp:
 
     def _validate_args(self, args: list[str]) -> None:
         if len(args) < 2:
-            raise ValidationError(
-                'cp требует как минимум два аргумента: cp <source> <dest>'
-            )
+            raise ValidationError('cp требует как минимум два аргумента: cp -h')
 
-    def _normalize(self, raw: str, ctx: CommandContext) -> Path:
-        expanded = os.path.expanduser(raw)
-        p = Path(expanded)
-        if not p.is_absolute():
-            p = Path(ctx.pwd) / p
-        return p.resolve(strict=False)
+    def _create_backup(self, path: Path) -> str:
+        # создание временной папки для backup файла
+        tmp_dir = Path(tempfile.mkdtemp(prefix='.cp_undo_'))
+        backup_path = tmp_dir / path.name
+        shutil.copy2(str(path), str(backup_path))
+        path.unlink()
+        return str(backup_path)
 
-    def _ensure_parent_dir_exists(self, path: Path) -> None:
-        parent = path.parent
-        if not (parent.exists() and parent.is_dir()):
-            raise ValidationError(f'Целевая директория не существует: {parent}')
-
-    def _record_cp(self, src: Path, dst: Path, backup: str | None) -> None:
+    def _record_undo(self, src: Path, dst: Path, backup: str | None) -> None:
         self._undo_records.append(
             UndoRecord(
                 action='cp',
@@ -52,115 +47,113 @@ class Cp:
             )
         )
 
-    def _backup_existing_file(self, path: Path) -> str:
-        tmp_dir = Path(tempfile.mkdtemp(prefix='.cp_undo_'))
-        backup_path = tmp_dir / path.name
-        shutil.copy2(str(path), str(backup_path))
-        path.unlink()
-        return str(backup_path)
+    def _copy_file(self, src: Path, dst: Path) -> None:
+        # проверка родительской директории
+        if not dst.parent.exists() or not dst.parent.is_dir():
+            raise ValidationError(
+                f'Родительская директория не существует: {dst.parent}'
+            )
 
-    def _copy_file_with_undo(self, src_file: Path, dst_file: Path) -> None:
-        self._ensure_parent_dir_exists(dst_file)
+        if dst.exists() and dst.is_dir():
+            raise ValidationError(f'Нельзя перезаписать директорию файлом: {dst}')
 
-        backup: str | None = None
-        if dst_file.is_file():
-            backup = self._backup_existing_file(dst_file)
+        # backup если цель существует
+        backup = None
+        if dst.is_file():
+            backup = self._create_backup(dst)
 
-        if dst_file.exists() and dst_file.is_dir():
-            raise ValidationError(f'Нельзя перезаписать директорию файлом: {dst_file}')
-
-        shutil.copy2(str(src_file), str(dst_file))
-        self._record_cp(src_file, dst_file, backup)
-
-    def _ensure_parent(self, path: Path) -> None:
-        path.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(src), str(dst))
+        self._record_undo(src, dst, backup)
 
     def _is_recursive(self, flags: list[str]) -> bool:
         return ('-r' in flags) or ('-R' in flags) or ('--recursive' in flags)
 
-    def _is_dir_content_path(self, path: str) -> tuple[bool, str]:
-        if Path(path).name == '*':
-            base_dir = str(Path(path).parent)
-            return True, base_dir if base_dir else path
-        return False, path
+    def _copy_dir(self, src: Path, dst: Path, merge_content: bool) -> None:
+        # определение корневой директории назначения
+        root_dst = dst if merge_content else (dst / src.name)
+        root_dst.mkdir(parents=True, exist_ok=True)
 
-    def _copy_dir_recursive(self, src_dir: Path, dst: Path, place_inside: bool) -> None:
-        """
-        Если place_inside=True: корнем назначения будет dst / basename(src_dir).
-        Если place_inside=False: корнем назначения будет dst (слияние содержимого src_dir в dst).
-        """
-        root_dst = (dst / src_dir.name) if place_inside else dst
-        self._ensure_parent(root_dst)
-
-        for cur_root, dirs, files in os.walk(src_dir):
+        # обход всех файлов в src
+        for cur_root, dirs, files in os.walk(src):
             cur_root_path = Path(cur_root)
-            rel = os.path.relpath(cur_root_path, src_dir)
-            target_dir = root_dst if rel == '.' else root_dst / rel
-            self._ensure_parent(target_dir)
+            rel_path = cur_root_path.relative_to(src)
 
-            for dir in dirs:
-                self._ensure_parent(target_dir / dir)
+            # целевая директория для текущего уровня
+            target_dir = root_dst if rel_path == Path('.') else root_dst / rel_path
+            target_dir.mkdir(parents=True, exist_ok=True)
 
-            for fname in files:
-                s = cur_root_path / fname
-                d = target_dir / fname
-                if d.exists() and d.is_dir():
+            # создание поддиректорий
+            for dir_name in dirs:
+                (target_dir / dir_name).mkdir(parents=True, exist_ok=True)
+
+            # копирование файлов
+            for file_name in files:
+                src_file = cur_root_path / file_name
+                dst_file = target_dir / file_name
+
+                if dst_file.exists() and dst_file.is_dir():
                     raise ValidationError(
-                        f'Конфликт типов: в цели директория, а копируется файл: {d}'
+                        f'Конфликт типов: в цели директория а копируется файл: {dst_file}'
                     )
-                backup: str | None = None
-                if d.is_file():
-                    backup = self._backup_existing_file(d)
-                shutil.copy2(str(s), str(d))
-                self._record_cp(s, d, backup)
+
+                # backup если файл существует
+                backup = None
+                if dst_file.is_file():
+                    backup = self._create_backup(dst_file)
+
+                shutil.copy2(str(src_file), str(dst_file))
+                self._record_undo(src_file, dst_file, backup)
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._undo_records.clear()
         self._validate_args(args)
+
         *srcs, dst = args
-        dst_path = self._normalize(dst, ctx)
-
-        if len(srcs) > 1 and not dst_path.is_dir():
-            raise ValidationError(
-                'Если копируется несколько объектов, последний аргумент должен быть существующей директорией'
-            )
-
+        dst_path = normalize(dst, ctx)
         recursive = self._is_recursive(flags)
 
-        for x in srcs:
-            content_mode, src_base = self._is_dir_content_path(x)
-            src_path = self._normalize(src_base, ctx)
+        # проверка множественного копирования
+        if len(srcs) > 1 and not dst_path.is_dir():
+            raise ValidationError(
+                'Если копируется несколько объектов последний аргумент должен быть директорией'
+            )
 
-            is_src_file = src_path.is_file()
-            is_src_dir = src_path.is_dir()
-            if not is_src_file and not is_src_dir:
-                raise ValidationError(f'Источник не найден: {x}')
+        for src_arg in srcs:
+            # обработка шаблона dir/*
+            is_content_mode = Path(src_arg).name == '*'
+            src_base = str(Path(src_arg).parent) if is_content_mode else src_arg
+            src_path = normalize(src_base, ctx)
 
-            if is_src_file:
+            if not src_path.exists():
+                raise ValidationError(f'Источник не найден: {src_arg}')
+
+            # копирование файла
+            if src_path.is_file():
                 target = (
                     (dst_path / src_path.name)
                     if (len(srcs) > 1 or dst_path.is_dir())
                     else dst_path
                 )
-                self._copy_file_with_undo(src_path, target)
+                self._copy_file(src_path, target)
                 continue
 
+            # копирование директории требует флаг -r
             if not recursive:
                 raise ValidationError('Для копирования директории нужен флаг -r')
 
-            if len(srcs) == 1 and dst_path.is_file():
+            # нельзя перезаписать файл директорией
+            if dst_path.is_file():
                 raise ValidationError('Нельзя перезаписать файл директорией')
 
-            if not dst_path.is_dir():
+            if dst_path.is_dir():
+                # копирование в существующую директорию
+                self._copy_dir(src_path, dst_path, is_content_mode)
+            else:
+                # создание новой директории
                 if len(srcs) > 1:
                     raise ValidationError(
-                        'Целевая директория должна существовать при копировании нескольких источников'
+                        'Цель должна существовать при копировании нескольких источников'
                     )
-                self._ensure_parent(dst_path)
-                self._copy_dir_recursive(src_path, dst_path, place_inside=False)
-            else:
-                self._copy_dir_recursive(
-                    src_path, dst_path, place_inside=not content_mode
-                )
+                self._copy_dir(src_path, dst_path, merge_content=True)
 
         return f'cp: скопировано {len(self._undo_records)} объектов'

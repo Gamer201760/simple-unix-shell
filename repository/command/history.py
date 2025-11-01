@@ -17,9 +17,7 @@ class History:
 
     def _validate_args(self, args: list[str]) -> None:
         if len(args) > 1:
-            raise ValidationError(
-                'history принимает ровно один аргумент, воспользуйтесь history -h'
-            )
+            raise ValidationError('history принимает ровно один аргумент: history -h')
 
     def execute(self, args: list[str], flags: list[str], ctx: CommandContext) -> str:
         self._validate_args(args)
