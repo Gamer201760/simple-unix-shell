@@ -1,6 +1,7 @@
-from entity.command import Command, UndoCommand
+from entity.command import Command
 from entity.context import CommandContext
 from entity.errors import CommandNotFoundError, DomainError
+from entity.undo import UndoCommand
 from usecase.interface import HistoryRepository, UndoRepository
 
 
@@ -37,8 +38,8 @@ class Shell:
                 res = cmd.execute(args, flags, self._context)
             except DomainError as e:
                 error = e
-            if isinstance(cmd, UndoCommand):
-                self._undo_repo.add(cmd.undo())
+            if isinstance(cmd, UndoCommand) and (u := cmd.undo()):
+                self._undo_repo.add(u)
             if error is not None:
                 raise error
         self._history_repo.add(name, args, flags)
